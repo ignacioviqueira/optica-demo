@@ -74,7 +74,13 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 8}},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {"NAME": "apps.cuentas.validators.StrongPasswordValidator"},
 ]
+
+# Auth URLs
+LOGIN_URL = "/cuentas/login/"
+LOGIN_REDIRECT_URL = "/catalogo/"
+LOGOUT_REDIRECT_URL = "/cuentas/login/"
 
 LANGUAGE_CODE = "es-ar"
 TIME_ZONE = "America/Argentina/Cordoba"
