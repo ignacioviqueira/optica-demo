@@ -25,6 +25,10 @@ class Producto(models.Model):
         Categoria, on_delete=models.PROTECT, related_name="productos"
     )
     imagen = models.ImageField(upload_to="productos/", null=True, blank=True)
+    material = models.CharField(max_length=100, blank=True)
+    forma = models.CharField(max_length=100, blank=True)
+    # Baja lógica: oculta del catálogo pero conserva el histórico (HU-02)
+    activo = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = "Producto"
@@ -37,3 +41,14 @@ class Producto(models.Model):
     @property
     def stock_critico(self):
         return self.stock_actual <= self.stock_minimo
+
+    def descontar_stock(self, cantidad: int) -> None:
+        """Descuenta stock al confirmar una venta. Lanza ValueError si es insuficiente."""
+        if self.stock_actual < cantidad:
+            raise ValueError(
+                f"Stock insuficiente para «{self}»: "
+                f"{self.stock_actual} disponible(s), se requieren {cantidad}."
+            )
+        self.stock_actual = models.F("stock_actual") - cantidad
+        self.save(update_fields=["stock_actual"])
+        self.refresh_from_db(fields=["stock_actual"])

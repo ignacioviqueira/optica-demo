@@ -16,13 +16,13 @@ class CategoriaAdmin(admin.ModelAdmin):
 
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "marca", "categoria", "precio", "stock_actual", "stock_minimo", "estado_stock")
-    list_filter = ("categoria", "marca")
+    list_display = ("nombre", "marca", "categoria", "material", "forma", "precio", "stock_actual", "stock_minimo", "estado_stock", "activo")
+    list_filter = ("categoria", "marca", "material", "forma", "activo")
     search_fields = ("nombre", "marca")
-    list_editable = ("stock_actual",)
+    list_editable = ("stock_actual", "activo")
 
-    @admin.display(description="Stock", boolean=False)
+    @admin.display(description="Stock")
     def estado_stock(self, obj):
         if obj.stock_critico:
-            return format_html('<span style="color:red;font-weight:bold;">⚠ Crítico ({}/{})</span>', obj.stock_actual, obj.stock_minimo)
-        return format_html('<span style="color:green;">OK ({}/{})</span>', obj.stock_actual, obj.stock_minimo)
+            return format_html('<span style="color:red;font-weight:bold;">⚠ {}/{}</span>', obj.stock_actual, obj.stock_minimo)
+        return format_html('<span style="color:green;">OK {}/{}</span>', obj.stock_actual, obj.stock_minimo)

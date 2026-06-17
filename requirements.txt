@@ -4,3 +4,4 @@ gunicorn
 python-decouple
 whitenoise
 Pillow
+djangorestframework

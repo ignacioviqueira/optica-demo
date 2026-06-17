@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Carrito — Óptica Demo{% endblock %}
+
+{% block content %}
+<h2 class="fw-bold mb-4">Carrito de compras</h2>
+
+<div id="carrito-vacio" class="text-center py-5 d-none">
+  <div class="display-6 mb-2">&#128722;</div>
+  <p class="text-muted">Tu carrito está vacío.</p>
+  <a href="{% url 'catalogo:index' %}" class="btn btn-primary">Ver catálogo</a>
+</div>
+
+<div id="carrito-contenido" class="d-none">
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Producto</th>
+            <th class="text-center">Cantidad</th>
+            <th class="text-end">Precio unit.</th>
+            <th class="text-end">Subtotal</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="carrito-tbody"></tbody>
+        <tfoot class="table-light fw-bold">
+          <tr>
+            <td colspan="3" class="text-end">Total:</td>
+            <td class="text-end" id="carrito-total"></td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between">
+    <a href="{% url 'catalogo:index' %}" class="btn btn-outline-secondary">Seguir comprando</a>
+    <button class="btn btn-success px-4" id="btn-checkout">Confirmar pedido</button>
+  </div>
+</div>
+
+<div id="checkout-ok" class="text-center py-5 d-none">
+  <div class="display-5 mb-2">&#10003;</div>
+  <h4 class="fw-bold">¡Pedido confirmado!</h4>
+  <p class="text-muted">Tu pedido fue registrado y está pendiente de validación por el equipo de ventas.</p>
+  <a href="{% url 'catalogo:index' %}" class="btn btn-primary mt-2">Volver al catálogo</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function fmt(v) {
+  return `$${Number(v).toLocaleString("es-AR", {maximumFractionDigits: 0})}`;
+}
+
+function renderCarrito() {
+  const carrito = JSON.parse(localStorage.getItem("carrito") || "[]");
+  const vacio   = document.getElementById("carrito-vacio");
+  const cont    = document.getElementById("carrito-contenido");
+  const tbody   = document.getElementById("carrito-tbody");
+  const totalEl = document.getElementById("carrito-total");
+
+  if (!carrito.length) {
+    vacio.classList.remove("d-none");
+    cont.classList.add("d-none");
+    return;
+  }
+  vacio.classList.add("d-none");
+  cont.classList.remove("d-none");
+
+  tbody.innerHTML = "";
+  let total = 0;
+  carrito.forEach((item, idx) => {
+    const sub = item.precio * item.cantidad;
+    total += sub;
+    tbody.insertAdjacentHTML("beforeend", `
+      <tr>
+        <td>${item.nombre}</td>
+        <td class="text-center">
+          <input type="number" class="form-control form-control-sm text-center" style="width:70px;margin:auto;"
+                 value="${item.cantidad}" min="1" data-idx="${idx}" onchange="cambiarCantidad(this)">
+        </td>
+        <td class="text-end">${fmt(item.precio)}</td>
+        <td class="text-end">${fmt(sub)}</td>
+        <td class="text-end">
+          <button class="btn btn-outline-danger btn-sm" onclick="eliminarItem(${idx})">✕</button>
+        </td>
+      </tr>`);
+  });
+  totalEl.textContent = fmt(total);
+}
+
+function cambiarCantidad(input) {
+  const carrito = JSON.parse(localStorage.getItem("carrito") || "[]");
+  const idx = parseInt(input.dataset.idx);
+  carrito[idx].cantidad = Math.max(1, parseInt(input.value) || 1);
+  localStorage.setItem("carrito", JSON.stringify(carrito));
+  renderCarrito();
+  actualizarBadge();
+}
+
+function eliminarItem(idx) {
+  const carrito = JSON.parse(localStorage.getItem("carrito") || "[]");
+  carrito.splice(idx, 1);
+  localStorage.setItem("carrito", JSON.stringify(carrito));
+  renderCarrito();
+  actualizarBadge();
+}
+
+function actualizarBadge() {
+  const carrito = JSON.parse(localStorage.getItem("carrito") || "[]");
+  const total = carrito.reduce((s, i) => s + i.cantidad, 0);
+  const badge = document.getElementById("badge-carrito");
+  if (badge) {
+    badge.textContent = total;
+    badge.classList.toggle("d-none", total === 0);
+  }
+}
+
+document.getElementById("btn-checkout")?.addEventListener("click", () => {
+  localStorage.removeItem("carrito");
+  document.getElementById("carrito-contenido").classList.add("d-none");
+  document.getElementById("checkout-ok").classList.remove("d-none");
+  actualizarBadge();
+});
+
+renderCarrito();
+actualizarBadge();
+</script>
+{% endblock %}

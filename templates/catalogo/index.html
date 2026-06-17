@@ -1,13 +1,335 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Catálogo — Óptica Demo{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h2 class="fw-bold mb-0">Catálogo de productos</h2>
+<div class="row g-4">
+
+  <!-- Sidebar de filtros -->
+  <div class="col-12 col-md-3" id="sidebar">
+    <div class="card border-0 shadow-sm sticky-top" style="top:80px;">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="fw-bold mb-0">Filtros</h6>
+          <button class="btn btn-link btn-sm p-0 text-muted" id="btn-limpiar">Limpiar</button>
+        </div>
+
+        <!-- Categoría -->
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-uppercase text-muted">Categoría</label>
+          <div id="filtro-categorias" class="d-flex flex-column gap-1"></div>
+        </div>
+
+        <!-- Marca -->
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-uppercase text-muted">Marca</label>
+          <div id="filtro-marcas" class="d-flex flex-column gap-1"></div>
+        </div>
+
+        <!-- Material -->
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-uppercase text-muted">Material</label>
+          <div id="filtro-materiales" class="d-flex flex-column gap-1"></div>
+        </div>
+
+        <!-- Forma -->
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-uppercase text-muted">Forma</label>
+          <div id="filtro-formas" class="d-flex flex-column gap-1"></div>
+        </div>
+
+        <!-- Precio -->
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-uppercase text-muted">Precio</label>
+          <div class="d-flex gap-2">
+            <input type="number" class="form-control form-control-sm" id="precio-min"
+                   placeholder="Mín." min="0" step="1">
+            <input type="number" class="form-control form-control-sm" id="precio-max"
+                   placeholder="Máx." min="0" step="1">
+          </div>
+        </div>
+
+        <button class="btn btn-primary w-100" id="btn-filtrar">Aplicar filtros</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Área principal -->
+  <div class="col-12 col-md-9">
+    <!-- Barra de búsqueda -->
+    <div class="d-flex gap-2 mb-4">
+      <input type="text" class="form-control" id="buscador"
+             placeholder="Buscar por nombre, marca...">
+      <button class="btn btn-outline-secondary" id="btn-buscar">Buscar</button>
+    </div>
+
+    <!-- Estado: cargando / sin resultados -->
+    <div id="estado-carga" class="text-center py-5 text-muted d-none">
+      <div class="spinner-border text-primary mb-2" role="status"></div>
+      <div>Cargando productos…</div>
+    </div>
+    <div id="sin-resultados" class="text-center py-5 d-none">
+      <div class="display-6 mb-2">&#128269;</div>
+      <p class="text-muted">No encontramos productos con esos filtros.</p>
+      <button class="btn btn-outline-primary" id="btn-limpiar-sr">Limpiar filtros</button>
+    </div>
+
+    <!-- Grilla de productos -->
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-4" id="grilla-productos"></div>
+  </div>
 </div>
-<div class="alert alert-info">
-  <strong>Próxima fase:</strong> Aquí se mostrará el catálogo con filtros, tarjetas de producto
-  y el botón de Prueba Virtual (VTO).
-</div>
+
+<!-- Template de tarjeta (hidden, clonado por JS) -->
+<template id="tpl-tarjeta">
+  <div class="col">
+    <div class="card h-100 border-0 shadow-sm producto-card">
+      <a class="card-img-link" href="#">
+        <img src="" alt="" class="card-img-top"
+             style="height:200px;object-fit:cover;">
+      </a>
+      <div class="card-body d-flex flex-column">
+        <span class="badge bg-secondary mb-1 align-self-start categoria-badge"></span>
+        <h6 class="card-title fw-bold mb-0 nombre-producto"></h6>
+        <small class="text-muted marca-producto mb-2"></small>
+        <div class="mt-auto">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-bold fs-5 precio-producto"></span>
+            <span class="badge stock-badge"></span>
+          </div>
+          <div class="d-flex gap-1">
+            <a href="#" class="btn btn-outline-primary btn-sm flex-fill btn-vto">Prueba Virtual</a>
+            <button class="btn btn-primary btn-sm flex-fill btn-carrito"
+                    data-id="" data-nombre="" data-precio="">Añadir al carrito</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const API_PRODUCTOS = "/api/productos/";
+const API_FILTROS   = "/api/filtros/";
+const API_CATS      = "/api/categorias/";
+const IMG_FALLBACK  = "{% static 'img/producto-sin-imagen.svg' %}";
+const USER_ROL      = "{{ user.rol }}";
+
+let categorias = [];
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function buildCheckboxGroup(containerId, items, valueKey, labelKey) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = "";
+  items.forEach(item => {
+    const id = `cb-${containerId}-${item[valueKey]}`.replace(/\s+/g, "_");
+    el.insertAdjacentHTML("beforeend",
+      `<div class="form-check">
+         <input class="form-check-input filtro-check" type="checkbox"
+                id="${id}" value="${item[valueKey]}" data-group="${containerId}">
+         <label class="form-check-label small" for="${id}">${item[labelKey]}</label>
+       </div>`);
+  });
+}
+
+function checkedValues(group) {
+  return [...document.querySelectorAll(`.filtro-check[data-group="${group}"]:checked`)]
+    .map(el => el.value);
+}
+
+function buildParams() {
+  const cats   = checkedValues("filtro-categorias");
+  const marcas = checkedValues("filtro-marcas");
+  const mats   = checkedValues("filtro-materiales");
+  const formas = checkedValues("filtro-formas");
+  const pmin   = document.getElementById("precio-min").value;
+  const pmax   = document.getElementById("precio-max").value;
+  const q      = document.getElementById("buscador").value.trim();
+
+  const p = new URLSearchParams();
+  if (cats.length === 1)   p.set("categoria", cats[0]);
+  marcas.forEach(m => p.append("marca", m));
+  mats.forEach(m   => p.append("material", m));
+  formas.forEach(f  => p.append("forma", f));
+  if (pmin) p.set("precio_min", pmin);
+  if (pmax) p.set("precio_max", pmax);
+  if (q)   p.set("q", q);
+  return p;
+}
+
+function catNombre(id) {
+  const c = categorias.find(c => c.id == id);
+  return c ? c.nombre : "";
+}
+
+// ── Renderizado ───────────────────────────────────────────────────────────────
+
+function renderProductos(productos) {
+  const grilla = document.getElementById("grilla-productos");
+  const noRes  = document.getElementById("sin-resultados");
+  const tpl    = document.getElementById("tpl-tarjeta");
+  grilla.innerHTML = "";
+
+  if (!productos.length) {
+    noRes.classList.remove("d-none");
+    return;
+  }
+  noRes.classList.add("d-none");
+
+  productos.forEach(p => {
+    const clone = tpl.content.cloneNode(true);
+    const card  = clone.querySelector(".producto-card");
+
+    const img = clone.querySelector("img.card-img-top");
+    img.src = p.imagen_url || IMG_FALLBACK;
+    img.alt = p.nombre;
+    img.onerror = () => { img.src = IMG_FALLBACK; };
+
+    const detailUrl = `/catalogo/${p.id}/`;
+    clone.querySelector("a.card-img-link").href = detailUrl;
+
+    clone.querySelector(".categoria-badge").textContent = catNombre(p.categoria);
+    clone.querySelector(".nombre-producto").textContent = p.nombre;
+    clone.querySelector(".marca-producto").textContent  = p.marca;
+    clone.querySelector(".precio-producto").textContent =
+      `$${Number(p.precio).toLocaleString("es-AR", {maximumFractionDigits: 0})}`;
+
+    const stockBadge = clone.querySelector(".stock-badge");
+    if (p.stock_actual === 0) {
+      stockBadge.textContent = "Sin stock";
+      stockBadge.classList.add("bg-danger");
+    } else if (p.stock_critico) {
+      stockBadge.textContent = `⚠ Stock bajo (${p.stock_actual})`;
+      stockBadge.classList.add("bg-warning", "text-dark");
+    } else {
+      stockBadge.classList.add("d-none");
+    }
+
+    if (p.stock_critico && p.stock_actual > 0) {
+      card.classList.add("border", "border-warning");
+    }
+
+    clone.querySelector(".btn-vto").href = `/vto/?producto=${p.id}`;
+
+    const btnCarrito = clone.querySelector(".btn-carrito");
+    if (USER_ROL === "ventas" || USER_ROL === "gerencia") {
+      btnCarrito.remove();
+    } else {
+      btnCarrito.dataset.id     = p.id;
+      btnCarrito.dataset.nombre = p.nombre;
+      btnCarrito.dataset.precio = p.precio;
+      if (p.stock_actual === 0) {
+        btnCarrito.disabled = true;
+        btnCarrito.title    = "Sin stock disponible";
+      }
+    }
+
+    grilla.appendChild(clone);
+  });
+}
+
+// ── Carga de datos ────────────────────────────────────────────────────────────
+
+async function cargarFiltros() {
+  const [filtrosRes, catsRes] = await Promise.all([
+    fetch(API_FILTROS), fetch(API_CATS)
+  ]);
+  const filtros  = await filtrosRes.json();
+  const catsData = await catsRes.json();
+  categorias     = catsData.results ?? catsData;
+
+  buildCheckboxGroup("filtro-categorias", categorias, "id", "nombre");
+  buildCheckboxGroup("filtro-marcas",
+    (filtros.marcas || []).map(m => ({v: m, l: m})), "v", "l");
+  buildCheckboxGroup("filtro-materiales",
+    (filtros.materiales || []).map(m => ({v: m, l: m})), "v", "l");
+  buildCheckboxGroup("filtro-formas",
+    (filtros.formas || []).map(f => ({v: f, l: f})), "v", "l");
+}
+
+async function cargarProductos() {
+  const carga  = document.getElementById("estado-carga");
+  const grilla = document.getElementById("grilla-productos");
+  const noRes  = document.getElementById("sin-resultados");
+  carga.classList.remove("d-none");
+  grilla.innerHTML = "";
+  noRes.classList.add("d-none");
+
+  try {
+    const params = buildParams();
+    const res    = await fetch(`${API_PRODUCTOS}?${params}`);
+    const data   = await res.json();
+    const items  = data.results ?? data;
+    renderProductos(items);
+  } catch (e) {
+    console.error("Error al cargar productos:", e);
+  } finally {
+    carga.classList.add("d-none");
+  }
+}
+
+function limpiarFiltros() {
+  document.querySelectorAll(".filtro-check").forEach(cb => cb.checked = false);
+  document.getElementById("precio-min").value = "";
+  document.getElementById("precio-max").value = "";
+  document.getElementById("buscador").value   = "";
+  cargarProductos();
+}
+
+// ── Carrito (localStorage) ────────────────────────────────────────────────────
+
+document.getElementById("grilla-productos").addEventListener("click", e => {
+  const btn = e.target.closest(".btn-carrito");
+  if (!btn || btn.disabled) return;
+
+  const { id, nombre, precio } = btn.dataset;
+  const carrito = JSON.parse(localStorage.getItem("carrito") || "[]");
+  const idx = carrito.findIndex(i => i.id == id);
+  if (idx >= 0) {
+    carrito[idx].cantidad += 1;
+  } else {
+    carrito.push({ id, nombre, precio: parseFloat(precio), cantidad: 1 });
+  }
+  localStorage.setItem("carrito", JSON.stringify(carrito));
+
+  btn.textContent = "✓ Agregado";
+  btn.classList.replace("btn-primary", "btn-success");
+  setTimeout(() => {
+    btn.textContent = "Añadir al carrito";
+    btn.classList.replace("btn-success", "btn-primary");
+  }, 1500);
+
+  actualizarContadorCarrito();
+});
+
+function actualizarContadorCarrito() {
+  const carrito = JSON.parse(localStorage.getItem("carrito") || "[]");
+  const total = carrito.reduce((s, i) => s + i.cantidad, 0);
+  const badge = document.getElementById("badge-carrito");
+  if (badge) {
+    badge.textContent = total;
+    badge.classList.toggle("d-none", total === 0);
+  }
+}
+
+// ── Eventos ───────────────────────────────────────────────────────────────────
+
+document.getElementById("btn-filtrar").addEventListener("click", cargarProductos);
+document.getElementById("btn-limpiar").addEventListener("click", limpiarFiltros);
+document.getElementById("btn-limpiar-sr").addEventListener("click", limpiarFiltros);
+document.getElementById("btn-buscar").addEventListener("click", cargarProductos);
+document.getElementById("buscador").addEventListener("keydown", e => {
+  if (e.key === "Enter") cargarProductos();
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(async () => {
+  await cargarFiltros();
+  await cargarProductos();
+  actualizarContadorCarrito();
+})();
+</script>
 {% endblock %}

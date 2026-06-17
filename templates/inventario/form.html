@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}{% if producto %}Editar producto{% else %}Nuevo producto{% endif %} — Óptica Demo{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a href="{% url 'inventario:lista' %}" class="btn btn-outline-secondary btn-sm">← Volver</a>
+      <h2 class="fw-bold mb-0">
+        {% if producto %}Editar producto{% else %}Nuevo producto{% endif %}
+      </h2>
+    </div>
+
+    {% if form.errors %}
+      <div class="alert alert-danger">
+        <strong>Corregí los errores antes de continuar:</strong>
+        <ul class="mb-0 mt-1">
+          {% for field in form %}
+            {% for error in field.errors %}
+              <li>{{ field.label }}: {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+          {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+              {{ form.nombre }}
+              {% if form.nombre.errors %}<div class="text-danger small mt-1">{{ form.nombre.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Marca <span class="text-danger">*</span></label>
+              {{ form.marca }}
+              {% if form.marca.errors %}<div class="text-danger small mt-1">{{ form.marca.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Categoría <span class="text-danger">*</span></label>
+              {{ form.categoria }}
+              {% if form.categoria.errors %}<div class="text-danger small mt-1">{{ form.categoria.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Material</label>
+              {{ form.material }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Forma</label>
+              {{ form.forma }}
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Precio <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                {{ form.precio }}
+              </div>
+              {% if form.precio.errors %}<div class="text-danger small mt-1">{{ form.precio.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Stock actual <span class="text-danger">*</span></label>
+              {{ form.stock_actual }}
+              {% if form.stock_actual.errors %}<div class="text-danger small mt-1">{{ form.stock_actual.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Stock mínimo <span class="text-danger">*</span></label>
+              {{ form.stock_minimo }}
+              <div class="form-text">Umbral para alerta de stock crítico.</div>
+              {% if form.stock_minimo.errors %}<div class="text-danger small mt-1">{{ form.stock_minimo.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold">Descripción</label>
+              {{ form.descripcion }}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold">Imagen del producto</label>
+              {% if producto.imagen %}
+                <div class="mb-2">
+                  <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}"
+                       class="rounded border" style="max-height:120px;">
+                  <div class="form-text">Subí una nueva imagen para reemplazar la actual.</div>
+                </div>
+              {% endif %}
+              {{ form.imagen }}
+              <div class="form-text">Formatos: JPG, PNG, WEBP. Tamaño recomendado: 600×400 px.</div>
+            </div>
+          </div>
+
+          <hr class="my-4">
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'inventario:lista' %}" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary px-4">
+              {% if producto %}Guardar cambios{% else %}Crear producto{% endif %}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

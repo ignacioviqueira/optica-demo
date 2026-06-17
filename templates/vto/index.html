@@ -1,0 +1,649 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Prueba Virtual — Óptica Demo{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-3">
+  <a href="{% url 'catalogo:index' %}" class="btn btn-outline-secondary btn-sm">
+    ← Catálogo
+  </a>
+  <h4 class="mb-0 fw-bold">Prueba Virtual</h4>
+  <span class="badge bg-primary ms-1">OpenCV.js</span>
+  <span id="badge-estado" class="badge bg-secondary ms-auto">Iniciando…</span>
+</div>
+
+<div class="row g-4">
+
+  <!-- ── Canvas principal ──────────────────────────────────────────── -->
+  <div class="col-12 col-lg-8">
+    <div id="alerta-vto" class="alert d-none py-2 mb-2" role="alert"></div>
+
+    <div class="position-relative bg-dark rounded overflow-hidden"
+         style="min-height:340px; display:flex; align-items:center; justify-content:center;">
+
+      <!-- Placeholder mientras no hay imagen -->
+      <div id="placeholder-canvas" class="text-center text-white-50 p-4">
+        <div style="font-size:3rem;">📷</div>
+        <div class="mt-2">Subí una foto o activá la cámara<br>
+          <small>para comenzar la prueba virtual</small></div>
+      </div>
+
+      <!-- Canvas de detección + overlay -->
+      <canvas id="canvas-vto"
+              class="img-fluid rounded d-none"
+              style="max-width:100%; display:block; cursor:crosshair;"></canvas>
+
+      <!-- Spinner de detección -->
+      <div id="spinner-deteccion"
+           class="position-absolute top-0 start-0 w-100 h-100
+                  d-none d-flex align-items-center justify-content-center"
+           style="background:rgba(0,0,0,.45);">
+        <div class="spinner-border text-light" role="status">
+          <span class="visually-hidden">Detectando…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video webcam (oculto, sirve como fuente de captura) -->
+    <video id="video-cam" autoplay playsinline muted
+           class="d-none mt-2 rounded w-100" style="max-height:260px;"></video>
+    <div id="panel-captura" class="d-none mt-2 d-flex gap-2">
+      <button id="btn-capturar" class="btn btn-success flex-fill">
+        📸 Capturar foto
+      </button>
+      <button id="btn-detener-cam" class="btn btn-outline-danger">
+        ✕ Detener cámara
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Panel de controles ────────────────────────────────────────── -->
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body d-flex flex-column gap-3">
+
+        <!-- Fuente de imagen -->
+        <div>
+          <div class="d-flex gap-2">
+            <label class="btn btn-outline-primary flex-fill" for="input-foto">
+              📁 Subir foto
+              <input id="input-foto" type="file" accept="image/jpeg,image/png"
+                     class="d-none">
+            </label>
+            <button id="btn-cam" class="btn btn-outline-secondary flex-fill">
+              🎥 Cámara
+            </button>
+          </div>
+          <div class="form-text text-center mt-1">Aceptá JPG o PNG</div>
+        </div>
+
+        <!-- Selector de armazón overlay -->
+        <div>
+          <label class="form-label small fw-semibold text-uppercase text-muted">
+            Armazón de prueba
+          </label>
+          <div class="d-flex gap-2 flex-wrap" id="panel-frames">
+            {% for nombre, info in frames_disponibles.items %}
+              <button class="btn btn-outline-dark btn-sm btn-frame {% if forloop.first %}active{% endif %}"
+                      data-frame="{{ nombre }}"
+                      title="{{ info.label }}"
+                      style="flex:1; min-width:80px;">
+                <img src="{% static info.static_path %}"
+                     alt="{{ info.label }}"
+                     style="width:100%; height:28px; object-fit:contain;"
+                     onerror="this.style.display='none'">
+                <div class="small mt-1">{{ info.label }}</div>
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Armazón del catálogo seleccionado -->
+        {% if producto %}
+        <div class="border rounded p-2 d-flex gap-2 align-items-center" id="card-producto">
+          {% if producto.imagen %}
+            <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}"
+                 style="width:56px;height:56px;object-fit:cover;" class="rounded">
+          {% else %}
+            <div class="rounded bg-light d-flex align-items-center justify-content-center"
+                 style="width:56px;height:56px;font-size:1.4rem;">👓</div>
+          {% endif %}
+          <div class="flex-grow-1 overflow-hidden">
+            <div class="fw-semibold text-truncate">{{ producto.nombre }}</div>
+            <div class="small text-muted">{{ producto.marca }}</div>
+            <div class="fw-bold text-primary">
+              ${{ producto.precio|floatformat:0 }}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Ajuste fino (HU-07) -->
+        <div>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label small fw-semibold text-uppercase text-muted mb-0">
+              Ajuste fino
+            </label>
+            <button id="btn-reset-adj" class="btn btn-link btn-sm p-0 text-muted">
+              Restablecer
+            </button>
+          </div>
+
+          <div class="mb-2">
+            <div class="d-flex justify-content-between">
+              <small>Horizontal (X)</small>
+              <small id="lbl-adj-x" class="text-muted fw-semibold">0 px</small>
+            </div>
+            <input id="adj-x" type="range" class="form-range"
+                   min="-80" max="80" step="1" value="0">
+          </div>
+
+          <div class="mb-2">
+            <div class="d-flex justify-content-between">
+              <small>Vertical (Y)</small>
+              <small id="lbl-adj-y" class="text-muted fw-semibold">0 px</small>
+            </div>
+            <input id="adj-y" type="range" class="form-range"
+                   min="-80" max="80" step="1" value="0">
+          </div>
+
+          <div class="mb-0">
+            <div class="d-flex justify-content-between">
+              <small>Escala</small>
+              <small id="lbl-adj-scale" class="text-muted fw-semibold">1.00×</small>
+            </div>
+            <input id="adj-scale" type="range" class="form-range"
+                   min="0.5" max="1.8" step="0.02" value="1.0">
+          </div>
+        </div>
+
+        <!-- Acción principal -->
+        <div class="mt-auto">
+          {% if user.rol == "cliente" %}
+          <button id="btn-add-cart"
+                  class="btn btn-primary w-100 btn-lg"
+                  disabled>
+            🛒 Añadir al carrito
+          </button>
+          <div id="msg-cart" class="form-text text-center d-none text-success fw-semibold">
+            ¡Añadido! Podés seguir probando.
+          </div>
+          {% else %}
+          <div class="alert alert-info py-2 mb-0 small text-center">
+            Solo los clientes pueden añadir al carrito.
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div><!-- /panel -->
+</div><!-- /row -->
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+// ── Constantes ───────────────────────────────────────────────────────────────
+
+const FACE_XML  = "{% static 'vto/cascades/haarcascade_frontalface_default.xml' %}";
+const EYE_XML   = "{% static 'vto/cascades/haarcascade_eye.xml' %}";
+const CSRFTOKEN = "{{ csrf_token }}";
+const USER_ROL  = "{{ user.rol }}";
+
+// Ratio armazón real / IPD real: 140 mm (frame estándar) / 63 mm (IPD promedio)
+const FRAME_TO_IPD = 2.22;
+
+// Información de los frames overlay desde Django
+const FRAMES = {
+  {% for nombre, info in frames_disponibles.items %}
+  "{{ nombre }}": { url: "{% static info.static_path %}", label: "{{ info.label }}" },
+  {% endfor %}
+};
+
+// Producto cargado desde el catálogo (puede ser null)
+let PRODUCTO_ID     = {{ producto.pk|default:'null' }};
+let PRODUCTO_NOMBRE = "{{ producto.nombre|default:''|escapejs }}";
+let PRODUCTO_PRECIO = "{{ producto.precio|stringformat:'.2f'|default:'' }}";
+
+// ── Estado ───────────────────────────────────────────────────────────────────
+
+let faceCascade  = null;
+let eyeCascade   = null;
+let ocvReady     = false;
+let baseImg      = null;   // HTMLImageElement con la foto cargada
+let calib        = null;   // { leftEye, rightEye, ipd, angle }
+let frameImg     = null;   // HTMLImageElement con el PNG del armazón
+let camStream    = null;
+
+// ── OpenCV.js — inicialización ───────────────────────────────────────────────
+
+function onOpenCvReady() {
+  cv['onRuntimeInitialized'] = async () => {
+    setEstado('Cargando detectores Haar…', 'secondary');
+    try {
+      await cargarCascades();
+      ocvReady = true;
+      setEstado('Listo', 'success');
+      setAlerta('OpenCV listo. Subí una foto o activá la cámara para comenzar.', 'info');
+      habilitarControles(true);
+    } catch (e) {
+      setEstado('Error', 'danger');
+      setAlerta('No se pudieron cargar los detectores: ' + e.message, 'danger');
+    }
+  };
+}
+
+async function cargarCascades() {
+  await fetchAOCVFS(FACE_XML, 'face.xml');
+  await fetchAOCVFS(EYE_XML, 'eye.xml');
+  faceCascade = new cv.CascadeClassifier();
+  eyeCascade  = new cv.CascadeClassifier();
+  if (!faceCascade.load('face.xml')) throw new Error('cascade de rostro no pudo cargarse');
+  if (!eyeCascade.load('eye.xml'))   throw new Error('cascade de ojos no pudo cargarse');
+}
+
+async function fetchAOCVFS(url, filename) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} al cargar ${url}`);
+  const buf = await res.arrayBuffer();
+  // FS_createDataFile falla si el archivo ya existe — ignorar error
+  try {
+    cv.FS_createDataFile('/', filename, new Uint8Array(buf), true, false, false);
+  } catch (_) {}
+}
+
+// ── Detección de rostro y ojos ───────────────────────────────────────────────
+
+function runDetection() {
+  if (!ocvReady || !baseImg) return;
+  mostrarSpinner(true);
+
+  // Diferir al siguiente tick para que el spinner se muestre antes de que
+  // el hilo principal se bloquee con el procesamiento OpenCV.
+  setTimeout(() => {
+    try {
+      _detectar();
+    } catch (e) {
+      setAlerta('Error durante la detección: ' + e.message, 'danger');
+    } finally {
+      mostrarSpinner(false);
+    }
+  }, 60);
+}
+
+function _detectar() {
+  const canvas = document.getElementById('canvas-vto');
+  const src    = cv.imread(canvas);
+  const gray   = new cv.Mat();
+  cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+  cv.equalizeHist(gray, gray);
+
+  // ── Detección de rostros ───────────────────────────────────────────────
+  const faces = new cv.RectVector();
+  faceCascade.detectMultiScale(gray, faces, 1.1, 4, 0,
+    new cv.Size(Math.floor(canvas.width * 0.12), Math.floor(canvas.height * 0.12)));
+
+  if (faces.size() === 0) {
+    src.delete(); gray.delete(); faces.delete();
+    setAlerta(
+      '⚠ No se detectó ningún rostro. ' +
+      'Intentá con mejor iluminación, un fondo neutro y el rostro centrado.',
+      'warning',
+    );
+    return;
+  }
+
+  // Usar el rostro más grande
+  let face = faces.get(0);
+  for (let i = 1; i < faces.size(); i++) {
+    const f = faces.get(i);
+    if (f.width * f.height > face.width * face.height) face = f;
+  }
+
+  // ── Detección de ojos (mitad superior del rostro) ──────────────────────
+  const eyeRect = new cv.Rect(
+    face.x,
+    face.y,
+    face.width,
+    Math.floor(face.height * 0.55),
+  );
+  const eyeROI = gray.roi(eyeRect);
+  const eyes   = new cv.RectVector();
+  const maxEyeW = Math.floor(face.width * 0.46);
+  eyeCascade.detectMultiScale(eyeROI, eyes, 1.05, 3, 0,
+    new cv.Size(18, 18), new cv.Size(maxEyeW, maxEyeW));
+
+  let leftEye = null, rightEye = null;
+  const usedDetection = eyes.size() >= 2;
+
+  if (usedDetection) {
+    const list = [];
+    for (let i = 0; i < Math.min(eyes.size(), 6); i++) {
+      const e = eyes.get(i);
+      list.push({
+        x: face.x + e.x + e.width  / 2,
+        y: face.y + e.y + e.height / 2,
+      });
+    }
+    list.sort((a, b) => a.x - b.x);
+    leftEye  = list[0];
+    rightEye = list[list.length - 1];
+  } else if (eyes.size() === 1) {
+    // Un solo ojo detectado: reflejo por el centro del rostro
+    const e  = eyes.get(0);
+    const ex = face.x + e.x + e.width  / 2;
+    const ey = face.y + e.y + e.height / 2;
+    const fcx = face.x + face.width / 2;
+    if (ex < fcx) {
+      leftEye  = { x: ex,             y: ey };
+      rightEye = { x: 2 * fcx - ex,   y: ey };
+    } else {
+      rightEye = { x: ex,             y: ey };
+      leftEye  = { x: 2 * fcx - ex,   y: ey };
+    }
+  } else {
+    // Sin ojos: estimación geométrica a partir del rectángulo del rostro
+    leftEye  = { x: face.x + face.width * 0.29, y: face.y + face.height * 0.38 };
+    rightEye = { x: face.x + face.width * 0.71, y: face.y + face.height * 0.38 };
+  }
+
+  const ipd   = Math.hypot(rightEye.x - leftEye.x, rightEye.y - leftEye.y);
+  const angle = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x);
+  calib = { leftEye, rightEye, ipd, angle };
+
+  // Habilitar botón de carrito
+  if (USER_ROL === 'cliente') {
+    document.getElementById('btn-add-cart').disabled = false;
+  }
+
+  // Guardar eyeCount ANTES de liberar el objeto (use-after-free fix)
+  const eyeCount = eyes.size();
+
+  // Cleanup
+  src.delete(); gray.delete(); faces.delete(); eyeROI.delete(); eyes.delete();
+
+  const msg = usedDetection
+    ? '✓ Rostro y ojos detectados correctamente. Ajustá el armazón si es necesario.'
+    : eyeCount === 1
+      ? '⚠ Solo se detectó un ojo; la posición del otro fue estimada. Ajustá manualmente.'
+      : '⚠ Rostro detectado pero no se encontraron los ojos. Se usaron posiciones estimadas.';
+  setAlerta(msg, usedDetection ? 'success' : 'warning');
+
+  renderAll();
+}
+
+// ── Renderizado ───────────────────────────────────────────────────────────────
+
+function renderAll() {
+  const canvas = document.getElementById('canvas-vto');
+  const ctx    = canvas.getContext('2d');
+  if (!baseImg) return;
+  ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
+  if (calib && frameImg) drawOverlay(ctx, canvas);
+}
+
+function drawOverlay(ctx, canvas) {
+  // Las coordenadas de calibración vienen del canvas en la resolución de display.
+  const { leftEye, rightEye, ipd, angle } = calib;
+  const adjScale = parseFloat(document.getElementById('adj-scale').value) || 1.0;
+  const adjX     = parseFloat(document.getElementById('adj-x').value)     || 0;
+  const adjY     = parseFloat(document.getElementById('adj-y').value)     || 0;
+
+  const fw = ipd * FRAME_TO_IPD * adjScale;
+  const fh = fw  * (frameImg.naturalHeight / frameImg.naturalWidth);
+
+  const cx = (leftEye.x + rightEye.x) / 2 + adjX;
+  const cy = (leftEye.y + rightEye.y) / 2 + adjY;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+  ctx.drawImage(frameImg, -fw / 2, -fh / 2, fw, fh);
+  ctx.restore();
+}
+
+// ── Carga de imagen desde archivo ─────────────────────────────────────────────
+
+function cargarImagen(src) {
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.getElementById('canvas-vto');
+    const MAX_W  = 860;
+    const scale  = Math.min(1, MAX_W / img.naturalWidth);
+    canvas.width  = Math.round(img.naturalWidth  * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+
+    document.getElementById('placeholder-canvas').classList.add('d-none');
+    canvas.classList.remove('d-none');
+
+    baseImg = img;
+    calib   = null;
+    renderAll();
+    runDetection();
+  };
+  img.onerror = () => setAlerta('No se pudo cargar la imagen.', 'danger');
+  img.src = src;
+}
+
+// ── Selector de frame overlay ─────────────────────────────────────────────────
+
+function selectFrame(name) {
+  document.querySelectorAll('.btn-frame').forEach(b => {
+    b.classList.toggle('active', b.dataset.frame === name);
+  });
+  const img = new Image();
+  img.onload = () => { frameImg = img; renderAll(); };
+  img.onerror = () => console.warn('No se pudo cargar el frame:', name);
+  img.src = FRAMES[name]?.url || '';
+}
+
+// ── Webcam ────────────────────────────────────────────────────────────────────
+
+async function iniciarCamara() {
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 1280 } },
+    });
+    const video = document.getElementById('video-cam');
+    video.srcObject = camStream;
+    video.classList.remove('d-none');
+    document.getElementById('panel-captura').classList.remove('d-none');
+  } catch (e) {
+    setAlerta('No se pudo acceder a la cámara: ' + e.message, 'danger');
+  }
+}
+
+function detenerCamara() {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  document.getElementById('video-cam').classList.add('d-none');
+  document.getElementById('panel-captura').classList.add('d-none');
+}
+
+function capturarFoto() {
+  const video = document.getElementById('video-cam');
+  if (!video.videoWidth) return;
+  const tmp = document.createElement('canvas');
+  tmp.width  = video.videoWidth;
+  tmp.height = video.videoHeight;
+  const ctx  = tmp.getContext('2d');
+  // Espejo para selfie natural
+  ctx.translate(tmp.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0);
+  detenerCamara();
+  cargarImagen(tmp.toDataURL('image/png'));
+}
+
+// ── Añadir al carrito (HU-13 — registra evento de conversión) ────────────────
+
+async function addToCart() {
+  const pid    = PRODUCTO_ID;
+  const nombre = PRODUCTO_NOMBRE;
+  const precio = PRODUCTO_PRECIO;
+
+  if (!pid) {
+    setAlerta('Seleccioná un armazón del catálogo para añadir al carrito.', 'warning');
+    return;
+  }
+
+  // 1. Registrar evento de conversión VTO en la base de datos
+  try {
+    const r = await fetch('/api/vto/evento/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': CSRFTOKEN,
+      },
+      body: JSON.stringify({ producto_id: pid }),
+    });
+    if (!r.ok) console.warn('Evento VTO rechazado por el servidor:', r.status);
+  } catch (e) {
+    console.warn('Evento VTO no registrado (error de red):', e);
+  }
+
+  // 2. Agregar al carrito localStorage
+  const carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+  const idx = carrito.findIndex(i => i.id == pid);
+  if (idx >= 0) {
+    carrito[idx].cantidad += 1;
+  } else {
+    carrito.push({ id: pid, nombre, precio: parseFloat(precio), cantidad: 1 });
+  }
+  localStorage.setItem('carrito', JSON.stringify(carrito));
+  actualizarBadgeCarrito();
+
+  // 3. Feedback visual
+  const btn = document.getElementById('btn-add-cart');
+  btn.textContent = '✓ ¡Añadido!';
+  btn.classList.replace('btn-primary', 'btn-success');
+  document.getElementById('msg-cart').classList.remove('d-none');
+  setTimeout(() => {
+    btn.textContent = '🛒 Añadir al carrito';
+    btn.classList.replace('btn-success', 'btn-primary');
+  }, 2500);
+}
+
+// ── Helpers de UI ─────────────────────────────────────────────────────────────
+
+function setAlerta(msg, tipo) {
+  const el = document.getElementById('alerta-vto');
+  el.className = `alert alert-${tipo} py-2 mb-2`;
+  el.textContent = msg;
+  el.classList.remove('d-none');
+}
+
+function setEstado(texto, color) {
+  const b = document.getElementById('badge-estado');
+  b.textContent = texto;
+  b.className   = `badge bg-${color} ms-auto`;
+}
+
+function mostrarSpinner(show) {
+  document.getElementById('spinner-deteccion').classList.toggle('d-none', !show);
+}
+
+function habilitarControles(enabled) {
+  document.getElementById('btn-cam').disabled        = !enabled;
+  document.getElementById('input-foto').disabled     = !enabled;
+  document.querySelector('label[for="input-foto"]').classList.toggle('disabled', !enabled);
+}
+
+function actualizarBadgeCarrito() {
+  const carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+  const total   = carrito.reduce((s, i) => s + i.cantidad, 0);
+  const badge   = document.getElementById('badge-carrito');
+  if (badge) {
+    badge.textContent = total;
+    badge.classList.toggle('d-none', total === 0);
+  }
+}
+
+function actualizarLabelsAdj() {
+  document.getElementById('lbl-adj-x').textContent     = document.getElementById('adj-x').value + ' px';
+  document.getElementById('lbl-adj-y').textContent     = document.getElementById('adj-y').value + ' px';
+  document.getElementById('lbl-adj-scale').textContent =
+    parseFloat(document.getElementById('adj-scale').value).toFixed(2) + '×';
+}
+
+// ── Inicialización ────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  setEstado('Cargando OpenCV…', 'secondary');
+  habilitarControles(false);
+
+  // Frame inicial
+  const primerFrame = Object.keys(FRAMES)[0];
+  if (primerFrame) selectFrame(primerFrame);
+
+  // Si viene con ?producto= de catálogo seleccionamos visualmente
+  {% if producto %}
+  // El producto ya viene como contexto del servidor
+  {% endif %}
+
+  // Subir foto
+  document.getElementById('input-foto').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['jpg', 'jpeg', 'png'].includes(ext)) {
+      setAlerta('Solo se aceptan imágenes JPG o PNG.', 'warning');
+      return;
+    }
+    cargarImagen(URL.createObjectURL(file));
+    e.target.value = '';  // permitir re-selección del mismo archivo
+  });
+
+  // Cámara
+  document.getElementById('btn-cam').addEventListener('click', iniciarCamara);
+  document.getElementById('btn-capturar').addEventListener('click', capturarFoto);
+  document.getElementById('btn-detener-cam').addEventListener('click', detenerCamara);
+
+  // Frames overlay
+  document.querySelectorAll('.btn-frame').forEach(btn => {
+    btn.addEventListener('click', () => selectFrame(btn.dataset.frame));
+  });
+
+  // Ajustes
+  ['adj-x', 'adj-y', 'adj-scale'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      actualizarLabelsAdj();
+      renderAll();
+    });
+  });
+
+  // Reset ajustes
+  document.getElementById('btn-reset-adj').addEventListener('click', () => {
+    document.getElementById('adj-x').value     = 0;
+    document.getElementById('adj-y').value     = 0;
+    document.getElementById('adj-scale').value = 1.0;
+    actualizarLabelsAdj();
+    renderAll();
+  });
+
+  // Carrito
+  const btnCart = document.getElementById('btn-add-cart');
+  if (btnCart) btnCart.addEventListener('click', addToCart);
+
+  actualizarLabelsAdj();
+  actualizarBadgeCarrito();
+});
+</script>
+
+<!-- OpenCV.js — primero local; si falla, CDN como red de seguridad -->
+<script async
+        src="{% static 'vto/opencv.js' %}"
+        onload="onOpenCvReady()"
+        onerror="(function(){
+          var s=document.createElement('script');
+          s.src='https://docs.opencv.org/4.x/opencv.js';
+          s.onload=onOpenCvReady;
+          s.onerror=function(){
+            setEstado('Error','danger');
+            setAlerta('No se pudo cargar OpenCV.js (local ni CDN). Verificá la instalación.','danger');
+          };
+          document.head.appendChild(s);
+        })()">
+</script>
+{% endblock %}

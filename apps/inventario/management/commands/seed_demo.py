@@ -58,6 +58,8 @@ PRODUCTOS = {
             "precio": Decimal("45000.00"),
             "stock_actual": 15,
             "stock_minimo": 3,
+            "material": "Acetato",
+            "forma": "Cuadrado",
         },
         {
             "nombre": "Holbrook",
@@ -66,22 +68,28 @@ PRODUCTOS = {
             "precio": Decimal("38000.00"),
             "stock_actual": 8,
             "stock_minimo": 3,
+            "material": "Acetato",
+            "forma": "Cuadrado",
         },
         {
             "nombre": "PR 01OS",
             "marca": "Prada",
             "descripcion": "Diseño geométrico de alta gama en acetato negro.",
             "precio": Decimal("120000.00"),
-            "stock_actual": 2,   # ← stock crítico
+            "stock_actual": 2,
             "stock_minimo": 3,
+            "material": "Acetato",
+            "forma": "Cuadrado",
         },
         {
             "nombre": "FT5634-B",
             "marca": "Tom Ford",
             "descripcion": "Elegancia italiana, montura cuadrada en acetato.",
             "precio": Decimal("95000.00"),
-            "stock_actual": 1,   # ← stock crítico
+            "stock_actual": 1,
             "stock_minimo": 3,
+            "material": "Metal",
+            "forma": "Rectangular",
         },
         {
             "nombre": "205/V/4-F 55",
@@ -90,6 +98,8 @@ PRODUCTOS = {
             "precio": Decimal("32000.00"),
             "stock_actual": 12,
             "stock_minimo": 3,
+            "material": "Metal",
+            "forma": "Aviador",
         },
     ],
     "Cristales": [
@@ -100,6 +110,8 @@ PRODUCTOS = {
             "precio": Decimal("65000.00"),
             "stock_actual": 20,
             "stock_minimo": 5,
+            "material": "Orgánico",
+            "forma": "Progresivo",
         },
         {
             "nombre": "Individual 2",
@@ -108,14 +120,18 @@ PRODUCTOS = {
             "precio": Decimal("85000.00"),
             "stock_actual": 10,
             "stock_minimo": 5,
+            "material": "Orgánico",
+            "forma": "Progresivo",
         },
         {
             "nombre": "ID MyStyle V+",
             "marca": "Hoya",
             "descripcion": "Progresivo adaptativo para uso digital intensivo.",
             "precio": Decimal("72000.00"),
-            "stock_actual": 4,   # ← stock crítico
+            "stock_actual": 4,
             "stock_minimo": 5,
+            "material": "Orgánico",
+            "forma": "Progresivo",
         },
         {
             "nombre": "SeeMax Ultimate",
@@ -124,6 +140,8 @@ PRODUCTOS = {
             "precio": Decimal("78000.00"),
             "stock_actual": 7,
             "stock_minimo": 5,
+            "material": "Policarbonato",
+            "forma": "Unifocal",
         },
         {
             "nombre": "Autograph III",
@@ -132,6 +150,8 @@ PRODUCTOS = {
             "precio": Decimal("68000.00"),
             "stock_actual": 6,
             "stock_minimo": 5,
+            "material": "Orgánico",
+            "forma": "Progresivo",
         },
     ],
     "Lentes de Contacto": [
@@ -142,14 +162,18 @@ PRODUCTOS = {
             "precio": Decimal("18500.00"),
             "stock_actual": 50,
             "stock_minimo": 10,
+            "material": "Hidrogel de Silicona",
+            "forma": "Esférico",
         },
         {
             "nombre": "Ultra (6 u.)",
             "marca": "Bausch+Lomb",
             "descripcion": "Mensuales con MoistureSeal para ojo seco.",
             "precio": Decimal("22000.00"),
-            "stock_actual": 3,   # ← stock crítico
+            "stock_actual": 3,
             "stock_minimo": 10,
+            "material": "Hidrogel de Silicona",
+            "forma": "Esférico",
         },
         {
             "nombre": "Biofinity (6 u.)",
@@ -158,6 +182,8 @@ PRODUCTOS = {
             "precio": Decimal("19500.00"),
             "stock_actual": 25,
             "stock_minimo": 10,
+            "material": "Hidrogel",
+            "forma": "Esférico",
         },
         {
             "nombre": "Dailies Total1 (30 u.)",
@@ -166,14 +192,18 @@ PRODUCTOS = {
             "precio": Decimal("21000.00"),
             "stock_actual": 15,
             "stock_minimo": 10,
+            "material": "Hidrogel de Silicona",
+            "forma": "Esférico",
         },
         {
             "nombre": "Proclear Compatibles (6 u.)",
             "marca": "CooperVision",
             "descripcion": "Mensuales PC Technology, aptas para ojo seco.",
             "precio": Decimal("15000.00"),
-            "stock_actual": 2,   # ← stock crítico
+            "stock_actual": 2,
             "stock_minimo": 10,
+            "material": "Hidrogel",
+            "forma": "Tórico",
         },
     ],
 }
@@ -271,10 +301,23 @@ class Command(BaseCommand):
                         "stock_actual": item["stock_actual"],
                         "stock_minimo": item["stock_minimo"],
                         "categoria": cat,
+                        "material": item.get("material", ""),
+                        "forma": item.get("forma", ""),
                     },
                 )
                 if created:
                     prod_created += 1
+                else:
+                    # Patch material/forma on existing products if empty
+                    needs_save = False
+                    if not prod.material and item.get("material"):
+                        prod.material = item["material"]
+                        needs_save = True
+                    if not prod.forma and item.get("forma"):
+                        prod.forma = item["forma"]
+                        needs_save = True
+                    if needs_save:
+                        prod.save(update_fields=["material", "forma"])
                 productos[f"{item['marca']}_{item['nombre']}"] = prod
 
         self.stdout.write(

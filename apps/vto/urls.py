@@ -1,4 +1,9 @@
 from django.urls import path
 
-app_name = "vto"
-urlpatterns = []
+from . import views
+
+app_name = 'vto'
+
+urlpatterns = [
+    path('', views.index, name='index'),
+]
