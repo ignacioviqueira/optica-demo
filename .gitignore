@@ -1,5 +1,6 @@
 # Entorno
 .env
+.env.local
 .venv/
 venv/
 env/
@@ -12,21 +13,40 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+.pytest_cache/
+.coverage
+htmlcov/
 
 # Django
 staticfiles/
 media/
 *.sqlite3
+db.sqlite3
+
+# Logs
+*.log
+logs/
 
 # Docker
 .dockerignore
 
+# Node (por si se usa alguna herramienta JS local)
+node_modules/
+
 # OS
 .DS_Store
+.DS_Store?
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
+*.orig
+
+# Archivos temporales
+*.tmp
+*.bak

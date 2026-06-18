@@ -1,51 +1,218 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Inicio — Óptica Demo{% endblock %}
 
 {% block content %}
-<div class="py-5 text-center">
-  <h1 class="display-5 fw-bold">Sistema de Gestión Óptica</h1>
-  <p class="lead text-success fw-semibold mt-2">Demo levantado correctamente</p>
+<div class="container py-5">
 
-  <hr class="my-4">
+  <!-- Hero -->
+  <div class="text-center mb-5">
+    <h1 class="display-5 fw-bold">Sistema de Gestión Óptica</h1>
+    <p class="lead text-muted mb-1">Prototipo demo · Trabajo Final de Graduación</p>
+    <p class="text-muted small">Universidad Siglo 21 · Ingeniería en Software · Ignacio Federico Viqueira</p>
+  </div>
 
-  <div class="row justify-content-center g-3 mt-2">
-    <div class="col-md-3">
+  <!-- Credenciales de acceso rápido -->
+  <div class="card border-0 shadow-sm mb-5">
+    <div class="card-header bg-dark text-white fw-semibold">
+      Credenciales de demo — acceso directo
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Rol</th>
+            <th>Email</th>
+            <th>Contraseña</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge bg-danger">Gerencia</span></td>
+            <td><code>gerencia@optica.demo</code></td>
+            <td><code>Gerencia@123</code></td>
+            <td>
+              <a href="{% url 'cuentas:login' %}?next=/dashboard/" class="btn btn-sm btn-outline-danger">
+                Ingresar como Gerencia →
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="badge bg-warning text-dark">Ventas</span></td>
+            <td><code>ventas@optica.demo</code></td>
+            <td><code>Ventas@123</code></td>
+            <td>
+              <a href="{% url 'cuentas:login' %}?next=/pedidos/operativo/" class="btn btn-sm btn-outline-warning">
+                Ingresar como Ventas →
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="badge bg-success">Cliente</span></td>
+            <td><code>cliente@optica.demo</code></td>
+            <td><code>Cliente@123</code></td>
+            <td>
+              <a href="{% url 'cuentas:login' %}?next=/catalogo/" class="btn btn-sm btn-outline-success">
+                Ingresar como Cliente →
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recorrido guiado -->
+  <h4 class="fw-bold mb-3">Recorrido guiado del demo</h4>
+  <div class="row g-3 mb-5">
+
+    <div class="col-md-4">
       <div class="card h-100 border-0 shadow-sm">
         <div class="card-body">
-          <h5 class="card-title">Backend</h5>
-          <p class="card-text text-muted">Django 5 + PostgreSQL 16</p>
+          <div class="d-flex align-items-center mb-2">
+            <span class="badge bg-success me-2">1</span>
+            <h6 class="card-title mb-0">Catálogo y Prueba Virtual</h6>
+          </div>
+          <p class="card-text text-muted small">
+            Explorá los productos con filtros por marca, categoría y precio.
+            Seleccioná un armazón y usá la <strong>Prueba Virtual (VTO)</strong>
+            con OpenCV.js para superponer el armazón sobre tu foto.
+          </p>
+          <span class="badge bg-light text-dark border">Rol: Cliente</span>
+        </div>
+        <div class="card-footer bg-transparent border-0 pb-3">
+          <a href="{% url 'catalogo:index' %}" class="btn btn-sm btn-success w-100">
+            Ir al Catálogo
+          </a>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
+
+    <div class="col-md-4">
       <div class="card h-100 border-0 shadow-sm">
         <div class="card-body">
-          <h5 class="card-title">Frontend</h5>
-          <p class="card-text text-muted">HTML / CSS / JS + Bootstrap 5</p>
+          <div class="d-flex align-items-center mb-2">
+            <span class="badge bg-warning text-dark me-2">2</span>
+            <h6 class="card-title mb-0">Panel Operativo de Pedidos</h6>
+          </div>
+          <p class="card-text text-muted small">
+            Auditá pedidos pendientes de validación, revisá las recetas adjuntas
+            y cambiá el estado: <em>Validar</em>, <em>Rechazar</em> o
+            <em>Marcar como Listo</em>.
+          </p>
+          <span class="badge bg-light text-dark border">Rol: Ventas / Gerencia</span>
+        </div>
+        <div class="card-footer bg-transparent border-0 pb-3">
+          <a href="{% url 'pedidos:operativo' %}" class="btn btn-sm btn-warning w-100">
+            Ir a Pedidos
+          </a>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
+
+    <div class="col-md-4">
       <div class="card h-100 border-0 shadow-sm">
         <div class="card-body">
-          <h5 class="card-title">VTO</h5>
-          <p class="card-text text-muted">OpenCV.js (próximamente)</p>
+          <div class="d-flex align-items-center mb-2">
+            <span class="badge bg-danger me-2">3</span>
+            <h6 class="card-title mb-0">Dashboard Gerencial</h6>
+          </div>
+          <p class="card-text text-muted small">
+            KPIs de ventas, gráficos por período, métricas de uso del VTO,
+            alertas de stock crítico y exportación a CSV.
+          </p>
+          <span class="badge bg-light text-dark border">Rol: Gerencia</span>
+        </div>
+        <div class="card-footer bg-transparent border-0 pb-3">
+          <a href="{% url 'dashboard:index' %}" class="btn btn-sm btn-danger w-100">
+            Ir al Dashboard
+          </a>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
+
+    <div class="col-md-4">
       <div class="card h-100 border-0 shadow-sm">
         <div class="card-body">
-          <h5 class="card-title">Integración</h5>
-          <p class="card-text text-muted"><a href="http://localhost:5678" target="_blank">n8n :5678</a></p>
+          <div class="d-flex align-items-center mb-2">
+            <span class="badge bg-secondary me-2">4</span>
+            <h6 class="card-title mb-0">Inventario</h6>
+          </div>
+          <p class="card-text text-muted small">
+            CRUD de productos: creación, edición, desactivación y control de
+            stock mínimo. Acceso reservado a Gerencia.
+          </p>
+          <span class="badge bg-light text-dark border">Rol: Gerencia</span>
         </div>
+        <div class="card-footer bg-transparent border-0 pb-3">
+          <a href="{% url 'inventario:lista' %}" class="btn btn-sm btn-secondary w-100">
+            Ir al Inventario
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-2">
+            <span class="badge bg-info text-dark me-2">5</span>
+            <h6 class="card-title mb-0">Carrito y Checkout</h6>
+          </div>
+          <p class="card-text text-muted small">
+            Agregá productos al carrito, completá el checkout, pasá por el pago
+            simulado y obtené el comprobante de pedido.
+          </p>
+          <span class="badge bg-light text-dark border">Rol: Cliente</span>
+        </div>
+        <div class="card-footer bg-transparent border-0 pb-3">
+          <a href="{% url 'pedidos:carrito' %}" class="btn btn-sm btn-info w-100">
+            Ir al Carrito
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-2">
+            <span class="badge bg-dark me-2">6</span>
+            <h6 class="card-title mb-0">Integración n8n</h6>
+          </div>
+          <p class="card-text text-muted small">
+            Flujos automatizados de notificación: pedido validado y stock
+            crítico. Visualizá las ejecuciones en tiempo real.
+          </p>
+          <span class="badge bg-light text-dark border">Puerto 5678</span>
+        </div>
+        <div class="card-footer bg-transparent border-0 pb-3">
+          <a href="http://localhost:5678" target="_blank" rel="noopener" class="btn btn-sm btn-dark w-100">
+            Abrir n8n ↗
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Stack técnico -->
+  <div class="card border-0 bg-light">
+    <div class="card-body">
+      <h6 class="fw-semibold mb-2">Stack técnico</h6>
+      <div class="d-flex flex-wrap gap-2">
+        <span class="badge bg-white text-dark border">Django 5 + DRF</span>
+        <span class="badge bg-white text-dark border">PostgreSQL 16</span>
+        <span class="badge bg-white text-dark border">OpenCV.js (VTO)</span>
+        <span class="badge bg-white text-dark border">Bootstrap 5</span>
+        <span class="badge bg-white text-dark border">Chart.js 4</span>
+        <span class="badge bg-white text-dark border">n8n</span>
+        <span class="badge bg-white text-dark border">Docker Compose</span>
       </div>
     </div>
   </div>
 
-  <p class="mt-5 text-muted small">
-    Trabajo Final de Graduación · Universidad Siglo 21 · Ignacio Federico Viqueira
-  </p>
 </div>
 {% endblock %}
