@@ -5,3 +5,5 @@ python-decouple
 whitenoise
 Pillow
 djangorestframework
+reportlab
+qrcode[pil]

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Pago simulado — Óptica Demo{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-primary text-white text-center fw-semibold">
+        🔒 Pasarela de pago segura
+      </div>
+      <div class="card-body text-center py-4">
+        <p class="text-muted small mb-3">
+          <em>(Simulación — no se realizan cobros reales)</em>
+        </p>
+
+        <!-- Datos de tarjeta ficticios -->
+        <div class="text-start mb-3">
+          <label class="form-label fw-semibold small">Número de tarjeta</label>
+          <input type="text" class="form-control" value="4242 4242 4242 4242" readonly>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col">
+            <label class="form-label fw-semibold small">Vencimiento</label>
+            <input type="text" class="form-control" value="12/28" readonly>
+          </div>
+          <div class="col">
+            <label class="form-label fw-semibold small">CVV</label>
+            <input type="text" class="form-control" value="123" readonly>
+          </div>
+        </div>
+
+        <div class="alert alert-info py-2 mb-3">
+          <strong>Total a pagar: ${{ pedido.total|floatformat:"0" }}</strong>
+          &nbsp;(Pedido #{{ pedido.pk }})
+        </div>
+
+        <form method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success btn-lg w-100" id="btn-pagar">
+            Confirmar pago
+          </button>
+        </form>
+
+        <div class="mt-2">
+          <small class="text-muted">
+            Los datos de tarjeta son ficticios. Esta pasarela no procesa pagos reales.
+          </small>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

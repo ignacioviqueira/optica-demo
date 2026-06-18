@@ -35,6 +35,13 @@
       </li>
       {% endif %}
 
+      <!-- Cliente: mis pedidos -->
+      {% if user.rol == "cliente" %}
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'pedidos:historial' %}">Mis pedidos</a>
+      </li>
+      {% endif %}
+
       <!-- Ventas y Gerencia: panel operativo de pedidos -->
       {% if user.rol == "ventas" or user.rol == "gerencia" %}
       <li class="nav-item">

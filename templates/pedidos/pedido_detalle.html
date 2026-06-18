@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}Pedido #{{ pedido.pk }} — Óptica Demo{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-4">
+  <a href="{% url 'pedidos:operativo' %}" class="btn btn-outline-secondary btn-sm">← Volver</a>
+  <h2 class="fw-bold mb-0">Pedido #{{ pedido.pk|stringformat:"05d" }}</h2>
+  {% if pedido.estado == "pendiente_validacion" %}
+    <span class="badge bg-warning text-dark fs-6">{{ pedido.get_estado_display }}</span>
+  {% elif pedido.estado == "en_proceso" %}
+    <span class="badge bg-primary fs-6">{{ pedido.get_estado_display }}</span>
+  {% elif pedido.estado == "listo" %}
+    <span class="badge bg-success fs-6">{{ pedido.get_estado_display }}</span>
+  {% elif pedido.estado == "rechazado" %}
+    <span class="badge bg-danger fs-6">{{ pedido.get_estado_display }}</span>
+  {% endif %}
+</div>
+
+<div class="row g-4">
+
+  <!-- Columna izquierda: detalles + receta -->
+  <div class="col-lg-7">
+
+    <!-- Datos del cliente -->
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-white fw-semibold">Cliente</div>
+      <div class="card-body">
+        <p class="mb-1 fw-semibold">{{ pedido.usuario.get_full_name|default:"—" }}</p>
+        <p class="mb-0 text-muted small">{{ pedido.usuario.email }}</p>
+        <p class="mb-0 text-muted small">Fecha del pedido: {{ pedido.fecha|date:"d/m/Y H:i" }}</p>
+      </div>
+    </div>
+
+    <!-- Productos -->
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-white fw-semibold">Productos</div>
+      <div class="card-body p-0">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Producto</th>
+              <th>Marca</th>
+              <th class="text-center">Cant.</th>
+              <th class="text-end">P. Unit.</th>
+              <th class="text-end">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in pedido.detalles.all %}
+            <tr>
+              <td>{{ d.producto.nombre }}</td>
+              <td class="text-muted small">{{ d.producto.marca }}</td>
+              <td class="text-center">{{ d.cantidad }}</td>
+              <td class="text-end">${{ d.precio_unitario|floatformat:"0" }}</td>
+              <td class="text-end fw-semibold">${{ d.subtotal|floatformat:"0" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="fw-bold table-light">
+            <tr>
+              <td colspan="4" class="text-end">Total:</td>
+              <td class="text-end">${{ pedido.total|floatformat:"0" }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Receta digitalizada -->
+    {% if pedido.receta %}
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-white fw-semibold">Prescripción digitalizada</div>
+      <div class="card-body">
+        <table class="table table-sm mb-0">
+          <tr><th>Esfera OD</th><td>{{ pedido.receta.esfera_od }}</td></tr>
+          <tr><th>Cilindro OD</th><td>{{ pedido.receta.cilindro_od }}</td></tr>
+          <tr><th>Eje OD</th><td>{{ pedido.receta.eje_od }}°</td></tr>
+          <tr><th>DNP</th><td>{{ pedido.receta.dnp }} mm</td></tr>
+          <tr><th>Fecha emisión</th><td>{{ pedido.receta.fecha_emision }}</td></tr>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Imagen de receta -->
+    {% if pedido.receta_imagen %}
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-white fw-semibold">Receta adjunta (imagen)</div>
+      <div class="card-body text-center">
+        <a href="{{ pedido.receta_imagen.url }}" target="_blank">
+          <img src="{{ pedido.receta_imagen.url }}"
+               alt="Receta" class="img-fluid rounded" style="max-height:300px;">
+        </a>
+        <p class="text-muted small mt-1">Clic para ver en tamaño completo</p>
+      </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+      <small>⚠ El cliente no adjuntó imagen de receta.</small>
+    </div>
+    {% endif %}
+
+    {% if pedido.motivo_rechazo %}
+    <div class="alert alert-danger">
+      <strong>Motivo de rechazo:</strong> {{ pedido.motivo_rechazo }}
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Columna derecha: acciones -->
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm sticky-top" style="top:80px;">
+      <div class="card-header bg-white fw-semibold">Acciones</div>
+      <div class="card-body">
+
+        {% if pedido.estado == "pendiente_validacion" %}
+        <!-- Ventas: validar o rechazar -->
+        <div id="alertas-accion"></div>
+        <div class="d-grid gap-2">
+          <button class="btn btn-success" id="btn-validar">
+            ✓ Validar pedido → En Proceso
+          </button>
+          <button class="btn btn-outline-danger" data-bs-toggle="collapse"
+                  data-bs-target="#panel-rechazo">
+            ✕ Rechazar pedido
+          </button>
+        </div>
+        <div class="collapse mt-3" id="panel-rechazo">
+          <label class="form-label fw-semibold small">Motivo de rechazo *</label>
+          <textarea class="form-control mb-2" id="txt-motivo" rows="3"
+                    placeholder="Describí el motivo (receta vencida, datos inválidos, etc.)"></textarea>
+          <div class="d-grid">
+            <button class="btn btn-danger" id="btn-rechazar">
+              Confirmar rechazo y notificar
+            </button>
+          </div>
+        </div>
+
+        {% elif pedido.estado == "en_proceso" and user.rol == "gerencia" %}
+        <!-- Gerencia: generar PDF y marcar listo -->
+        <div id="alertas-accion"></div>
+        <div class="d-grid gap-2">
+          <a href="{% url 'pedidos:orden_trabajo_pdf' pedido.pk %}"
+             class="btn btn-outline-primary" target="_blank">
+            📄 Generar orden de trabajo (PDF)
+          </a>
+          <button class="btn btn-success" id="btn-listo">
+            ✓ Marcar como Listo para Entrega
+          </button>
+        </div>
+
+        {% elif pedido.estado == "listo" or pedido.estado == "rechazado" %}
+        <p class="text-muted small">Este pedido ya fue procesado. No hay acciones disponibles.</p>
+
+        {% elif pedido.estado == "en_proceso" and user.rol == "ventas" %}
+        <p class="text-muted small">El pedido está en proceso de armado. Las acciones de esta etapa son de Gerencia.</p>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CSRF = "{{ csrf_token }}";
+const PEDIDO_ID = {{ pedido.pk }};
+
+function showAlerta(msg, tipo) {
+  const div = document.getElementById("alertas-accion");
+  if (!div) return;
+  div.innerHTML = `<div class="alert alert-${tipo} py-2 small">${msg}</div>`;
+}
+
+async function apiPost(url, body) {
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-CSRFToken": CSRF },
+    body: JSON.stringify(body),
+  });
+  return r;
+}
+
+// Botón validar
+document.getElementById("btn-validar")?.addEventListener("click", async () => {
+  const btn = document.getElementById("btn-validar");
+  btn.disabled = true;
+  const r = await apiPost(`/api/pedidos/${PEDIDO_ID}/validar/`, {});
+  if (r.ok) {
+    showAlerta("Pedido validado. Actualizando…", "success");
+    setTimeout(() => location.reload(), 1200);
+  } else {
+    const d = await r.json();
+    showAlerta(d.error || "Error al validar", "danger");
+    btn.disabled = false;
+  }
+});
+
+// Botón rechazar
+document.getElementById("btn-rechazar")?.addEventListener("click", async () => {
+  const motivo = document.getElementById("txt-motivo")?.value.trim();
+  if (!motivo) { showAlerta("El motivo de rechazo es obligatorio.", "warning"); return; }
+  const btn = document.getElementById("btn-rechazar");
+  btn.disabled = true;
+  const r = await apiPost(`/api/pedidos/${PEDIDO_ID}/rechazar/`, { motivo });
+  if (r.ok) {
+    showAlerta("Pedido rechazado. Se notificó al cliente. Actualizando…", "success");
+    setTimeout(() => location.reload(), 1500);
+  } else {
+    const d = await r.json();
+    showAlerta(d.error || "Error al rechazar", "danger");
+    btn.disabled = false;
+  }
+});
+
+// Botón marcar listo
+document.getElementById("btn-listo")?.addEventListener("click", async () => {
+  const btn = document.getElementById("btn-listo");
+  btn.disabled = true;
+  const r = await apiPost(`/api/pedidos/${PEDIDO_ID}/listo/`, {});
+  if (r.ok) {
+    showAlerta("Pedido marcado como Listo. Actualizando…", "success");
+    setTimeout(() => location.reload(), 1200);
+  } else {
+    const d = await r.json();
+    showAlerta(d.error || "Error", "danger");
+    btn.disabled = false;
+  }
+});
+</script>
+{% endblock %}

@@ -52,6 +52,12 @@ class Pedido(models.Model):
         on_delete=models.SET_NULL,
         related_name="pedidos",
     )
+    receta_imagen = models.ImageField(
+        upload_to="recetas/",
+        null=True,
+        blank=True,
+        verbose_name="Imagen de receta",
+    )
     motivo_rechazo = models.TextField(blank=True)
 
     class Meta:

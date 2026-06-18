@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Confirmar pedido — Óptica Demo{% endblock %}
+
+{% block content %}
+<h2 class="fw-bold mb-4">Confirmar pedido</h2>
+
+<div id="carrito-vacio-msg" class="text-center py-5 d-none">
+  <div class="display-6 mb-2">&#128722;</div>
+  <p class="text-muted">Tu carrito está vacío.</p>
+  <a href="{% url 'catalogo:index' %}" class="btn btn-primary">Ver catálogo</a>
+</div>
+
+<div id="checkout-contenido" class="d-none">
+  <div class="row g-4">
+
+    <!-- Resumen del pedido -->
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white fw-semibold">Resumen del pedido</div>
+        <div class="card-body p-0">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Producto</th>
+                <th class="text-center">Cant.</th>
+                <th class="text-end">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody id="resumen-tbody"></tbody>
+            <tfoot class="table-light fw-bold">
+              <tr>
+                <td colspan="2" class="text-end">Total:</td>
+                <td class="text-end" id="resumen-total"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="col-lg-5">
+      <form id="form-checkout" method="post" enctype="multipart/form-data"
+            action="{% url 'pedidos:checkout' %}">
+        {% csrf_token %}
+        <input type="hidden" name="carrito_json" id="carrito-json-input">
+
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white fw-semibold">Adjuntar receta (opcional)</div>
+          <div class="card-body">
+            <p class="text-muted small mb-2">
+              Si ya tenés la receta de tu óptico, podés adjuntarla para agilizar
+              la validación del pedido. Formatos: JPG, PNG, PDF.
+            </p>
+            <input class="form-control" type="file" name="receta_imagen"
+                   accept="image/*" id="input-receta">
+          </div>
+        </div>
+
+        <div class="d-grid mt-3">
+          <button type="submit" class="btn btn-success btn-lg" id="btn-confirmar">
+            Continuar al pago
+          </button>
+        </div>
+        <div class="text-center mt-2">
+          <a href="{% url 'pedidos:carrito' %}" class="text-muted small">
+            ← Volver al carrito
+          </a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function fmt(v) {
+  return `$${Number(v).toLocaleString("es-AR", {maximumFractionDigits: 0})}`;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const carrito = JSON.parse(localStorage.getItem("carrito") || "[]");
+
+  if (!carrito.length) {
+    document.getElementById("carrito-vacio-msg").classList.remove("d-none");
+    return;
+  }
+
+  document.getElementById("checkout-contenido").classList.remove("d-none");
+
+  const tbody = document.getElementById("resumen-tbody");
+  let total = 0;
+  carrito.forEach(item => {
+    const sub = item.precio * item.cantidad;
+    total += sub;
+    tbody.insertAdjacentHTML("beforeend",
+      `<tr>
+        <td>${item.nombre}</td>
+        <td class="text-center">${item.cantidad}</td>
+        <td class="text-end">${fmt(sub)}</td>
+      </tr>`);
+  });
+  document.getElementById("resumen-total").textContent = fmt(total);
+
+  // Populate hidden input before submit
+  document.getElementById("form-checkout").addEventListener("submit", e => {
+    const currentCart = JSON.parse(localStorage.getItem("carrito") || "[]");
+    if (!currentCart.length) {
+      e.preventDefault();
+      alert("El carrito está vacío.");
+      return;
+    }
+    document.getElementById("carrito-json-input").value = JSON.stringify(currentCart);
+    // Clear cart only after the form submits (server redirects to pago)
+    // We'll clear it in the comprobante page instead
+  });
+});
+</script>
+{% endblock %}

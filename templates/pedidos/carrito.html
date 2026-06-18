@@ -38,15 +38,10 @@
 
   <div class="d-flex justify-content-between">
     <a href="{% url 'catalogo:index' %}" class="btn btn-outline-secondary">Seguir comprando</a>
-    <button class="btn btn-success px-4" id="btn-checkout">Confirmar pedido</button>
+    <a href="{% url 'pedidos:checkout' %}" class="btn btn-success px-4" id="btn-checkout">
+      Confirmar pedido
+    </a>
   </div>
-</div>
-
-<div id="checkout-ok" class="text-center py-5 d-none">
-  <div class="display-5 mb-2">&#10003;</div>
-  <h4 class="fw-bold">¡Pedido confirmado!</h4>
-  <p class="text-muted">Tu pedido fue registrado y está pendiente de validación por el equipo de ventas.</p>
-  <a href="{% url 'catalogo:index' %}" class="btn btn-primary mt-2">Volver al catálogo</a>
 </div>
 {% endblock %}
 
@@ -119,13 +114,6 @@ function actualizarBadge() {
     badge.classList.toggle("d-none", total === 0);
   }
 }
-
-document.getElementById("btn-checkout")?.addEventListener("click", () => {
-  localStorage.removeItem("carrito");
-  document.getElementById("carrito-contenido").classList.add("d-none");
-  document.getElementById("checkout-ok").classList.remove("d-none");
-  actualizarBadge();
-});
 
 renderCarrito();
 actualizarBadge();

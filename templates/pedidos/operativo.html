@@ -1,14 +1,134 @@
 {% extends "base.html" %}
-
 {% block title %}Panel Operativo — Óptica Demo{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h2 class="fw-bold mb-0">Panel operativo de ventas</h2>
-  <span class="badge bg-warning text-dark">Ventas</span>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="fw-bold mb-0">Panel operativo de pedidos</h2>
+  {% if user.rol == "gerencia" %}
+    <span class="badge bg-secondary">Gerencia</span>
+  {% else %}
+    <span class="badge bg-warning text-dark">Ventas</span>
+  {% endif %}
 </div>
-<div class="alert alert-info">
-  <strong>Próxima fase:</strong> Aquí se listarán los pedidos pendientes de validación,
-  las recetas adjuntas y el flujo de auditoría de órdenes.
+
+<!-- Pestañas de estado -->
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item">
+    <a class="nav-link {% if not estado_filtro %}active{% endif %}"
+       href="{% url 'pedidos:operativo' %}{% if q %}?q={{ q }}{% endif %}">
+      Todos
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if estado_filtro == 'pendiente_validacion' %}active{% endif %}"
+       href="{% url 'pedidos:operativo' %}?estado=pendiente_validacion{% if q %}&q={{ q }}{% endif %}">
+      Pendientes
+      {% with c=contadores.pendiente_validacion %}
+        {% if c %}<span class="badge bg-warning text-dark ms-1">{{ c }}</span>{% endif %}
+      {% endwith %}
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if estado_filtro == 'en_proceso' %}active{% endif %}"
+       href="{% url 'pedidos:operativo' %}?estado=en_proceso{% if q %}&q={{ q }}{% endif %}">
+      En proceso
+      {% with c=contadores.en_proceso %}
+        {% if c %}<span class="badge bg-primary ms-1">{{ c }}</span>{% endif %}
+      {% endwith %}
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if estado_filtro == 'listo' %}active{% endif %}"
+       href="{% url 'pedidos:operativo' %}?estado=listo{% if q %}&q={{ q }}{% endif %}">
+      Listos
+      {% with c=contadores.listo %}
+        {% if c %}<span class="badge bg-success ms-1">{{ c }}</span>{% endif %}
+      {% endwith %}
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if estado_filtro == 'rechazado' %}active{% endif %}"
+       href="{% url 'pedidos:operativo' %}?estado=rechazado{% if q %}&q={{ q }}{% endif %}">
+      Rechazados
+      {% with c=contadores.rechazado %}
+        {% if c %}<span class="badge bg-danger ms-1">{{ c }}</span>{% endif %}
+      {% endwith %}
+    </a>
+  </li>
+</ul>
+
+<!-- Búsqueda por email -->
+<form method="get" class="mb-3">
+  {% if estado_filtro %}
+  <input type="hidden" name="estado" value="{{ estado_filtro }}">
+  {% endif %}
+  <div class="input-group" style="max-width:380px;">
+    <input type="search" name="q" value="{{ q }}" class="form-control form-control-sm"
+           placeholder="Buscar por email del cliente…">
+    <button class="btn btn-outline-secondary btn-sm" type="submit">Buscar</button>
+    {% if q %}
+    <a href="{% url 'pedidos:operativo' %}{% if estado_filtro %}?estado={{ estado_filtro }}{% endif %}"
+       class="btn btn-outline-danger btn-sm">✕</a>
+    {% endif %}
+  </div>
+</form>
+
+{% if pedidos %}
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>N° Pedido</th>
+          <th>Cliente</th>
+          <th>Fecha</th>
+          <th class="text-end">Total</th>
+          <th class="text-center">Receta</th>
+          <th class="text-center">Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pedido in pedidos %}
+        <tr>
+          <td class="fw-semibold">#{{ pedido.pk|stringformat:"05d" }}</td>
+          <td>
+            <span class="small fw-semibold">{{ pedido.usuario.get_full_name|default:"—" }}</span>
+            <br><span class="text-muted" style="font-size:.75rem">{{ pedido.usuario.email }}</span>
+          </td>
+          <td class="small">{{ pedido.fecha|date:"d/m/Y H:i" }}</td>
+          <td class="text-end fw-semibold">${{ pedido.total|floatformat:"0" }}</td>
+          <td class="text-center">
+            {% if pedido.receta_imagen or pedido.receta %}
+              <span class="badge bg-success">✓</span>
+            {% else %}
+              <span class="badge bg-secondary">—</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if pedido.estado == "pendiente_validacion" %}
+              <span class="badge bg-warning text-dark">Pendiente</span>
+            {% elif pedido.estado == "en_proceso" %}
+              <span class="badge bg-primary">En proceso</span>
+            {% elif pedido.estado == "listo" %}
+              <span class="badge bg-success">Listo</span>
+            {% elif pedido.estado == "rechazado" %}
+              <span class="badge bg-danger">Rechazado</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <a href="{% url 'pedidos:pedido_detalle' pedido.pk %}"
+               class="btn btn-outline-primary btn-sm">Ver →</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
+{% else %}
+<div class="text-center py-5 text-muted">
+  <p>No hay pedidos que coincidan con los filtros aplicados.</p>
+</div>
+{% endif %}
 {% endblock %}

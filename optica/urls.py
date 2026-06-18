@@ -18,6 +18,7 @@ urlpatterns = [
     # API REST (DRF)
     path("api/", include("apps.inventario.api_urls")),
     path("api/vto/", include("apps.vto.api_urls")),
+    path("api/", include("apps.pedidos.api_urls")),
 ]
 
 if settings.DEBUG:

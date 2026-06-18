@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Mis pedidos — Óptica Demo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="fw-bold mb-0">
+    {% if user.rol == "gerencia" %}Historial de pedidos{% else %}Mis pedidos{% endif %}
+  </h2>
+  {% if user.rol == "gerencia" %}
+  <span class="badge bg-secondary">Gerencia</span>
+  {% endif %}
+</div>
+
+{% if user.rol == "gerencia" %}
+<!-- Búsqueda por email para Gerencia (el sistema usa email como identificador) -->
+<form method="get" class="mb-4">
+  <div class="input-group" style="max-width:400px;">
+    <input type="search" name="q" value="{{ q }}" class="form-control"
+           placeholder="Buscar por email del cliente…">
+    <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+    {% if q %}
+    <a href="{% url 'pedidos:historial' %}" class="btn btn-outline-danger">✕</a>
+    {% endif %}
+  </div>
+</form>
+{% if q %}
+<p class="text-muted small">Resultados para: <strong>{{ q }}</strong></p>
+{% endif %}
+{% endif %}
+
+{% if pedidos %}
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>N° Pedido</th>
+          {% if user.rol == "gerencia" %}<th>Cliente</th>{% endif %}
+          <th>Fecha</th>
+          <th class="text-end">Total</th>
+          <th class="text-center">Items</th>
+          <th class="text-center">Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pedido in pedidos %}
+        <tr>
+          <td class="fw-semibold">#{{ pedido.pk|stringformat:"05d" }}</td>
+          {% if user.rol == "gerencia" %}
+          <td>
+            <span class="small">{{ pedido.usuario.get_full_name|default:pedido.usuario.email }}</span>
+            <br><span class="text-muted" style="font-size:.75rem">{{ pedido.usuario.email }}</span>
+          </td>
+          {% endif %}
+          <td>{{ pedido.fecha|date:"d/m/Y H:i" }}</td>
+          <td class="text-end fw-semibold">${{ pedido.total|floatformat:"0" }}</td>
+          <td class="text-center">{{ pedido.detalles.count }}</td>
+          <td class="text-center">
+            {% if pedido.estado == "pendiente_validacion" %}
+              <span class="badge bg-warning text-dark">{{ pedido.get_estado_display }}</span>
+            {% elif pedido.estado == "en_proceso" %}
+              <span class="badge bg-primary">{{ pedido.get_estado_display }}</span>
+            {% elif pedido.estado == "listo" %}
+              <span class="badge bg-success">{{ pedido.get_estado_display }}</span>
+            {% elif pedido.estado == "rechazado" %}
+              <span class="badge bg-danger">{{ pedido.get_estado_display }}</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            {% if user.rol == "gerencia" %}
+            <a href="{% url 'pedidos:pedido_detalle' pedido.pk %}"
+               class="btn btn-outline-primary btn-sm">Ver</a>
+            {% else %}
+            <a href="{% url 'pedidos:comprobante' pedido.pk %}"
+               class="btn btn-outline-secondary btn-sm">Ver</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+  <div class="display-6 mb-2">📋</div>
+  {% if q %}
+  <p>No se encontraron pedidos para <strong>{{ q }}</strong>.</p>
+  {% else %}
+  <p>No tenés pedidos registrados todavía.</p>
+  <a href="{% url 'catalogo:index' %}" class="btn btn-primary mt-2">Ver catálogo</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

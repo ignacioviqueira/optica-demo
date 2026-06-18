@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Comprobante #{{ pedido.pk }} — Óptica Demo{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+
+    <!-- Banner de éxito -->
+    <div class="text-center mb-4">
+      <div class="display-5 mb-2 text-success">✓</div>
+      <h3 class="fw-bold">¡Pago confirmado!</h3>
+      <p class="text-muted">Tu pedido fue registrado y está pendiente de validación por el equipo de ventas.</p>
+    </div>
+
+    <!-- Comprobante -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">Comprobante de pedido</span>
+        <span class="badge bg-warning text-dark">{{ pedido.get_estado_display }}</span>
+      </div>
+      <div class="card-body">
+        <div class="row mb-3">
+          <div class="col-sm-4 text-muted small">N° de pedido</div>
+          <div class="col-sm-8 fw-semibold">#{{ pedido.pk|stringformat:"05d" }}</div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-sm-4 text-muted small">Fecha</div>
+          <div class="col-sm-8">{{ pedido.fecha|date:"d/m/Y H:i" }}</div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-sm-4 text-muted small">Total abonado</div>
+          <div class="col-sm-8 fw-bold text-success">
+            ${{ pedido.total|floatformat:"0" }}
+          </div>
+        </div>
+
+        <hr>
+
+        <h6 class="fw-semibold mb-2">Productos</h6>
+        <table class="table table-sm">
+          <thead class="table-light">
+            <tr>
+              <th>Producto</th>
+              <th class="text-center">Cant.</th>
+              <th class="text-end">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in pedido.detalles.all %}
+            <tr>
+              <td>{{ d.producto.nombre }}</td>
+              <td class="text-center">{{ d.cantidad }}</td>
+              <td class="text-end">${{ d.subtotal|floatformat:"0" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="fw-bold">
+            <tr>
+              <td colspan="2" class="text-end">Total:</td>
+              <td class="text-end">${{ pedido.total|floatformat:"0" }}</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        {% if pedido.receta_imagen %}
+        <div class="alert alert-success py-2 mt-2">
+          <small>✓ Receta adjunta correctamente.</small>
+        </div>
+        {% else %}
+        <div class="alert alert-warning py-2 mt-2">
+          <small>⚠ No adjuntaste receta. Podés hacerlo desde "Mis pedidos" antes de que ventas audite el pedido.</small>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="d-flex gap-2 justify-content-center">
+      <a href="{% url 'pedidos:historial' %}" class="btn btn-outline-primary">
+        Ver mis pedidos
+      </a>
+      <a href="{% url 'catalogo:index' %}" class="btn btn-primary">
+        Seguir comprando
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Limpiar el carrito ahora que el pedido fue confirmado
+localStorage.removeItem("carrito");
+const badge = document.getElementById("badge-carrito");
+if (badge) { badge.textContent = "0"; badge.classList.add("d-none"); }
+</script>
+{% endblock %}
