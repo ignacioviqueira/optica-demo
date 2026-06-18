@@ -25,9 +25,12 @@ services:
       - .env
     environment:
       DJANGO_SETTINGS_MODULE: optica.settings.dev
+      N8N_WEBHOOK_BASE: "http://n8n:5678/webhook"
     depends_on:
       db:
         condition: service_healthy
+      n8n:
+        condition: service_started
 
   n8n:
     image: n8nio/n8n
@@ -35,6 +38,10 @@ services:
       - "5678:5678"
     volumes:
       - n8ndata:/home/node/.n8n
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=false
+      - GENERIC_TIMEZONE=America/Argentina/Cordoba
+      - N8N_LOG_LEVEL=info
 
 volumes:
   pgdata:

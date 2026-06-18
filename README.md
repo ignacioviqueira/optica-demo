@@ -64,6 +64,22 @@ El comando `seed_demo` carga:
 
 El seed es **idempotente**: ejecutarlo más de una vez no duplica registros.
 
+## Flujos de integración n8n
+
+Después de `docker compose up --build`, los flujos deben importarse en n8n para
+que las notificaciones funcionen:
+
+1. Abrir **http://localhost:5678**
+2. Ir a **Workflows → Add workflow → Import from file**
+3. Importar `integracion/n8n/pedido_validado.json`
+4. Importar `integracion/n8n/stock_critico.json`
+
+> Los archivos JSON ya vienen con `"active": true`. n8n los activa automáticamente
+> al importar. Si el toggle queda en Off, activarlo manualmente desde la UI.
+>
+> Ver [docs/integracion.md](docs/integracion.md) para más detalles y cómo
+> probar con `curl`.
+
 ## Stack
 
 - **Backend:** Django 5 + PostgreSQL 16

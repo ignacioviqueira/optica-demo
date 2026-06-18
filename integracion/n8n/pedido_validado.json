@@ -1,0 +1,80 @@
+{
+  "name": "Optica Demo — Pedido Validado",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pedido-validado",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-4000-8000-aa0000000001",
+      "name": "Webhook Pedido Validado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "a1b2c3d4-0001-4000-8000-aa0000000001"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simulación de notificación al cliente por email\nconst body = $input.first().json.body || $input.first().json;\n\nconst mensaje = {\n  para: body.usuario_email,\n  nombre: body.usuario_nombre,\n  asunto: `Pedido #${body.pedido_id} — En proceso de armado`,\n  cuerpo: [\n    `Hola ${body.usuario_nombre},`,\n    ``,\n    `Tu pedido #${body.pedido_id} fue validado y está en proceso de armado.`,\n    `Estado: ${body.estado}`,\n    `Total: $${body.total}`,\n    ``,\n    `Te avisaremos cuando esté listo para retirar.`,\n    ``,\n    `Óptica Demo`\n  ].join('\\n')\n};\n\nconsole.log('[ÓPTICA DEMO] Email simulado enviado:');\nconsole.log(JSON.stringify(mensaje, null, 2));\n\nreturn [{\n  json: {\n    ok: true,\n    tipo: 'EMAIL_SIMULADO',\n    pedido_id: body.pedido_id,\n    destinatario: body.usuario_email,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "b2c3d4e5-0002-4000-8000-bb0000000002",
+      "name": "Simular Email al Cliente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($input.first().json) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "c3d4e5f6-0003-4000-8000-cc0000000003",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Pedido Validado": {
+      "main": [
+        [
+          {
+            "node": "Simular Email al Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simular Email al Cliente": {
+      "main": [
+        [
+          {
+            "node": "Responder OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a1b2c3d4-0001-4000-8000-aabbccddeeff",
+  "meta": {
+    "instanceId": "optica-demo-local"
+  },
+  "pinData": {},
+  "tags": [
+    { "name": "optica-demo" },
+    { "name": "pedidos" }
+  ]
+}

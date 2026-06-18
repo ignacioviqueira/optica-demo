@@ -1,14 +1,376 @@
 {% extends "base.html" %}
-
-{% block title %}Dashboard — Óptica Demo{% endblock %}
+{% block title %}Dashboard Gerencial — Óptica Demo{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h2 class="fw-bold mb-0">Dashboard gerencial</h2>
-  <span class="badge bg-success">Gerencia</span>
-</div>
-<div class="alert alert-info">
-  <strong>Próxima fase:</strong> Aquí se mostrarán los KPIs, gráficos de ventas,
-  métricas del VTO, alertas de stock crítico y pedidos recientes.
-</div>
+<div class="row g-4">
+
+  <!-- ── Sidebar ──────────────────────────────────────────────────────────── -->
+  <div class="col-12 col-md-3 col-xl-2">
+
+    <!-- Período -->
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-white fw-semibold small py-2">Período</div>
+      <div class="card-body p-2">
+        <div class="d-grid gap-1">
+          {% for p, label in periodos %}
+          <a href="?periodo={{ p }}"
+             class="btn btn-sm {% if periodo == p %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            {{ label }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Navegación rápida -->
+    <div class="list-group list-group-flush shadow-sm rounded mb-3" style="font-size:.85rem">
+      <a href="#kpis"      class="list-group-item list-group-item-action py-2">KPIs</a>
+      <a href="#ventas"    class="list-group-item list-group-item-action py-2">Ventas</a>
+      <a href="#productos" class="list-group-item list-group-item-action py-2">Productos</a>
+      <a href="#vto"       class="list-group-item list-group-item-action py-2">VTO</a>
+      <a href="#stock"     class="list-group-item list-group-item-action py-2">Stock</a>
+      <a href="#recientes" class="list-group-item list-group-item-action py-2">Recientes</a>
+    </div>
+
+    <!-- Exportar -->
+    <a href="{% url 'dashboard:export_csv' %}?periodo={{ periodo }}"
+       class="btn btn-outline-success btn-sm w-100">
+      ↓ Exportar CSV
+    </a>
+  </div>
+
+  <!-- ── Contenido principal ─────────────────────────────────────────────── -->
+  <div class="col-12 col-md-9 col-xl-10">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h2 class="fw-bold mb-0">Dashboard gerencial</h2>
+        <small class="text-muted">
+          {% if fecha_inicio %}
+            {{ fecha_inicio|date:"d/m/Y" }} – {{ fecha_fin|date:"d/m/Y" }}
+          {% else %}
+            Todo el período
+          {% endif %}
+        </small>
+      </div>
+      <span class="badge bg-success fs-6">Gerencia</span>
+    </div>
+
+    <!-- ── KPIs ────────────────────────────────────────────────────────────── -->
+    <div class="row g-3 mb-4" id="kpis">
+
+      <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body pb-2">
+            <div class="text-muted small mb-1">Ventas totales</div>
+            <div class="fs-4 fw-bold text-primary">${{ ventas_total|floatformat:"0" }}</div>
+            <div class="text-muted" style="font-size:.8rem">{{ volumen_pedidos }} pedido{{ volumen_pedidos|pluralize }}</div>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0 pb-2 px-3">
+            <div class="progress" style="height:3px">
+              <div class="progress-bar bg-primary" style="width:100%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body pb-2">
+            <div class="text-muted small mb-1">Pedidos activos</div>
+            <div class="fs-4 fw-bold text-success">{{ volumen_pedidos }}</div>
+            <div class="text-muted" style="font-size:.8rem">excluye rechazados</div>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0 pb-2 px-3">
+            <div class="progress" style="height:3px">
+              <div class="progress-bar bg-success" style="width:100%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body pb-2">
+            <div class="text-muted small mb-1">Clientes nuevos</div>
+            <div class="fs-4 fw-bold text-info">{{ clientes_nuevos }}</div>
+            <div class="text-muted" style="font-size:.8rem">registros en el período</div>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0 pb-2 px-3">
+            <div class="progress" style="height:3px">
+              <div class="progress-bar bg-info" style="width:100%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body pb-2">
+            <div class="text-muted small mb-1">Conversión VTO</div>
+            <div class="fs-4 fw-bold text-warning">{{ tasa_conversion }}%</div>
+            <div class="text-muted" style="font-size:.8rem">{{ conversiones_vto }} de {{ usuarios_con_vto_count }} usuario{{ usuarios_con_vto_count|pluralize }} con VTO</div>
+          </div>
+          <div class="card-footer bg-transparent border-0 pt-0 pb-2 px-3">
+            <div class="progress" style="height:3px">
+              <div class="progress-bar bg-warning" style="width:{{ tasa_conversion }}%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /kpis -->
+
+    <!-- ── Gráfico ventas diarias ───────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4" id="ventas">
+      <div class="card-header bg-white fw-semibold">Ventas por día</div>
+      <div class="card-body" style="height:260px; position:relative">
+        <canvas id="chartVentas"></canvas>
+        <div id="chartVentasEmpty" class="text-center text-muted py-5 d-none">
+          Sin ventas en el período seleccionado.
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Productos + VTO ─────────────────────────────────────────────────── -->
+    <div class="row g-4 mb-4">
+
+      <div class="col-md-6" id="productos">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white fw-semibold">Productos más vendidos</div>
+          <div class="card-body" style="min-height:220px; position:relative">
+            <canvas id="chartProductos"></canvas>
+            <div id="chartProdEmpty" class="text-center text-muted py-5 d-none">
+              Sin ventas en el período seleccionado.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6" id="vto">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white fw-semibold">
+            Pruebas virtuales (VTO)
+            {% if total_pruebas %}
+              <span class="badge bg-primary ms-1">{{ total_pruebas }}</span>
+            {% endif %}
+          </div>
+          <div class="card-body" style="min-height:220px; position:relative">
+            {% if total_pruebas %}
+              <canvas id="chartVTO"></canvas>
+            {% else %}
+              <div class="text-center text-muted py-5">Sin datos de VTO en el período.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /productos+vto -->
+
+    <!-- ── Stock crítico + Pedidos recientes ───────────────────────────────── -->
+    <div class="row g-4 mb-2">
+
+      <!-- Stock crítico -->
+      <div class="col-md-5" id="stock">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <span class="fw-semibold">Alertas de stock crítico</span>
+            {% if alertas_stock_count %}
+              <span class="badge bg-danger">{{ alertas_stock_count }}</span>
+            {% else %}
+              <span class="badge bg-success">OK</span>
+            {% endif %}
+          </div>
+          {% if stock_critico %}
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Producto</th>
+                  <th class="text-center">Stock</th>
+                  <th class="text-center">Mín.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for prod in stock_critico %}
+                <tr class="{% if prod.stock_actual == 0 %}table-danger{% else %}table-warning{% endif %}">
+                  <td class="small">{{ prod.nombre }}</td>
+                  <td class="text-center fw-bold">{{ prod.stock_actual }}</td>
+                  <td class="text-center text-muted">{{ prod.stock_minimo }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="card-body text-center text-muted small py-4">
+            Todos los productos tienen stock suficiente.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Pedidos recientes -->
+      <div class="col-md-7" id="recientes">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <span class="fw-semibold">Pedidos recientes</span>
+            <a href="{% url 'pedidos:operativo' %}" class="btn btn-outline-primary btn-sm">
+              Ver todos →
+            </a>
+          </div>
+          {% if pedidos_recientes %}
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>N°</th>
+                  <th>Cliente</th>
+                  <th class="text-end">Total</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in pedidos_recientes %}
+                <tr>
+                  <td class="small fw-semibold">
+                    <a href="{% url 'pedidos:pedido_detalle' p.pk %}" class="text-decoration-none">
+                      #{{ p.pk|stringformat:"05d" }}
+                    </a>
+                  </td>
+                  <td class="small">{{ p.usuario.get_full_name|default:p.usuario.email }}</td>
+                  <td class="text-end small">${{ p.total|floatformat:"0" }}</td>
+                  <td>
+                    {% if p.estado == "pendiente_validacion" %}
+                      <span class="badge bg-warning text-dark" style="font-size:.65rem">Pendiente</span>
+                    {% elif p.estado == "en_proceso" %}
+                      <span class="badge bg-primary" style="font-size:.65rem">En proceso</span>
+                    {% elif p.estado == "listo" %}
+                      <span class="badge bg-success" style="font-size:.65rem">Listo</span>
+                    {% elif p.estado == "rechazado" %}
+                      <span class="badge bg-danger" style="font-size:.65rem">Rechazado</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="card-body text-center text-muted small py-4">No hay pedidos aún.</div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div><!-- /stock+recientes -->
+
+  </div><!-- /main -->
+</div><!-- /row -->
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+const ventasData   = {{ chart_ventas_json|safe }};
+const productosData = {{ chart_productos_json|safe }};
+const vtoData      = {{ chart_vto_json|safe }};
+
+const PALETTE = ['#1a73e8','#34a853','#fbbc04','#ea4335','#9c27b0','#00bcd4','#ff5722','#607d8b'];
+
+// ── Ventas por día (bar + line dual-axis) ─────────────────────────────────────
+if (ventasData.labels.length) {
+  new Chart(document.getElementById('chartVentas'), {
+    data: {
+      labels: ventasData.labels,
+      datasets: [{
+        type: 'bar',
+        label: 'Ventas ($)',
+        data: ventasData.montos,
+        backgroundColor: 'rgba(26,115,232,0.2)',
+        borderColor: 'rgba(26,115,232,0.8)',
+        borderWidth: 1.5,
+        borderRadius: 4,
+        yAxisID: 'y',
+      }, {
+        type: 'line',
+        label: 'Pedidos',
+        data: ventasData.cantidades,
+        borderColor: 'rgba(52,168,83,0.9)',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        pointRadius: 3,
+        tension: 0.3,
+        yAxisID: 'y1',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'top', labels: { boxWidth: 12 } } },
+      scales: {
+        y:  { position: 'left',  ticks: { callback: v => '$' + v.toLocaleString('es-AR') } },
+        y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0 } },
+      }
+    }
+  });
+} else {
+  document.getElementById('chartVentas').classList.add('d-none');
+  document.getElementById('chartVentasEmpty').classList.remove('d-none');
+}
+
+// ── Productos más vendidos (horizontal bar) ────────────────────────────────────
+if (productosData.labels.length) {
+  new Chart(document.getElementById('chartProductos'), {
+    type: 'bar',
+    data: {
+      labels: productosData.labels,
+      datasets: [{
+        label: 'Unidades',
+        data: productosData.qtys,
+        backgroundColor: PALETTE.slice(0, productosData.labels.length),
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { ticks: { precision: 0 } } }
+    }
+  });
+} else {
+  document.getElementById('chartProductos').classList.add('d-none');
+  document.getElementById('chartProdEmpty').classList.remove('d-none');
+}
+
+// ── VTO: pruebas por modelo (doughnut) ────────────────────────────────────────
+{% if total_pruebas %}
+new Chart(document.getElementById('chartVTO'), {
+  type: 'doughnut',
+  data: {
+    labels: vtoData.labels,
+    datasets: [{
+      data: vtoData.pruebas,
+      backgroundColor: PALETTE.slice(0, vtoData.labels.length),
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.label}: ${ctx.parsed} prueba${ctx.parsed !== 1 ? 's' : ''}`
+        }
+      }
+    }
+  }
+});
+{% endif %}
+</script>
 {% endblock %}

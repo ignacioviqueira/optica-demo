@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.cuentas.decorators import login_requerido, rol_requerido
+from apps.integracion.webhooks import notificar_pedido_validado, notificar_stock_critico
 from apps.inventario.models import Producto
 
 from .models import DetallePedido, Pedido, Receta
@@ -43,9 +44,9 @@ def checkout(request):
             messages.error(request, "El carrito está vacío.")
             return redirect("pedidos:checkout")
 
+        validated = []
         try:
             with transaction.atomic():
-                validated = []
                 for item in items:
                     prod = get_object_or_404(Producto, pk=item["id"], activo=True)
                     cantidad = max(1, int(item.get("cantidad", 1)))
@@ -72,6 +73,11 @@ def checkout(request):
                 if "receta_imagen" in request.FILES:
                     pedido.receta_imagen = request.FILES["receta_imagen"]
                     pedido.save()
+
+            # Notificar stock crítico fuera de la transacción (no bloqueante)
+            for prod, _, _ in validated:
+                if prod.stock_critico:
+                    notificar_stock_critico(prod)
 
         except ValueError as exc:
             messages.error(request, str(exc))
@@ -202,6 +208,7 @@ class ValidarPedidoView(APIView):
             )
         pedido.estado = Pedido.Estado.EN_PROCESO
         pedido.save()
+        notificar_pedido_validado(pedido)
         return Response({"estado": pedido.get_estado_display()})
 
 

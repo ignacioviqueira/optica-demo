@@ -99,6 +99,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# URL base de los webhooks de n8n (vacío → webhooks deshabilitados, tests pasan sin red)
+N8N_WEBHOOK_BASE = config("N8N_WEBHOOK_BASE", default="")
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",

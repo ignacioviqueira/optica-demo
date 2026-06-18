@@ -1,6 +1,7 @@
 import datetime
 import json
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
@@ -263,6 +264,19 @@ class TransicionesPedidoAPITest(TestCase):
     def test_listo_requiere_en_proceso(self):
         r = self._post(self.gerencia, "listo", self.pedido.pk)
         self.assertEqual(r.status_code, 400)
+
+    @patch("apps.pedidos.views.notificar_pedido_validado")
+    @patch("apps.pedidos.models.Pedido.save", side_effect=RuntimeError("DB error"))
+    def test_webhook_no_se_llama_si_pedido_save_falla(self, mock_save, mock_notify):
+        # raise_request_exception=False → devuelve 500 en vez de re-lanzar la excepción
+        c = Client(raise_request_exception=False)
+        c.force_login(self.ventas)
+        c.post(
+            reverse("pedido-validar", kwargs={"pk": self.pedido.pk}),
+            json.dumps({}),
+            content_type="application/json",
+        )
+        mock_notify.assert_not_called()
 
 
 # ── PDF de orden de trabajo ───────────────────────────────────────────────────

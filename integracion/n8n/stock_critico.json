@@ -1,0 +1,80 @@
+{
+  "name": "Optica Demo — Stock Crítico",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "stock-critico",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "d4e5f6a7-0004-4000-8000-dd0000000004",
+      "name": "Webhook Stock Crítico",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "d4e5f6a7-0004-4000-8000-dd0000000004"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simulación de alerta interna de stock crítico\nconst body = $input.first().json.body || $input.first().json;\n\nconst nivel = body.stock_actual === 0 ? 'SIN_STOCK' : 'STOCK_MINIMO';\n\nconst alerta = {\n  tipo: nivel,\n  producto: `${body.marca} — ${body.nombre}`,\n  stock_actual: body.stock_actual,\n  stock_minimo: body.stock_minimo,\n  deficit: body.deficit,\n  mensaje: body.stock_actual === 0\n    ? `URGENTE: ${body.nombre} sin stock. Reabastecer inmediatamente.`\n    : `AVISO: ${body.nombre} en stock mínimo (${body.stock_actual}/${body.stock_minimo}).`\n};\n\nconsole.log('[ÓPTICA DEMO] Alerta de stock:');\nconsole.log(JSON.stringify(alerta, null, 2));\n\nreturn [{\n  json: {\n    ok: true,\n    tipo: 'ALERTA_STOCK',\n    nivel,\n    producto_id: body.producto_id,\n    producto: alerta.producto,\n    deficit: body.deficit,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "e5f6a7b8-0005-4000-8000-ee0000000005",
+      "name": "Procesar Alerta de Stock",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($input.first().json) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "f6a7b8c9-0006-4000-8000-ff0000000006",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Stock Crítico": {
+      "main": [
+        [
+          {
+            "node": "Procesar Alerta de Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Alerta de Stock": {
+      "main": [
+        [
+          {
+            "node": "Responder OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d4e5f6a7-0004-4000-8000-ddeeffaabbcc",
+  "meta": {
+    "instanceId": "optica-demo-local"
+  },
+  "pinData": {},
+  "tags": [
+    { "name": "optica-demo" },
+    { "name": "inventario" }
+  ]
+}
