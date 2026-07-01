@@ -1,31 +1,31 @@
 {% extends "base.html" %}
+{% load static inventario_extras %}
 
 {% block title %}Inventario — Óptica Demo{% endblock %}
 
 {% block content %}
+
+<!-- Page header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
-    <h2 class="fw-bold mb-0">Gestión de inventario</h2>
+    <h2 class="fw-bold mb-1">Gestión de inventario</h2>
     {% if criticos %}
-      <span class="badge bg-danger mt-1">⚠ {{ criticos }} producto{{ criticos|pluralize }} en stock crítico</span>
+      <span class="badge bg-danger badge-estado">
+        ⚠ {{ criticos }} producto{{ criticos|pluralize }} en stock crítico
+      </span>
+    {% else %}
+      <span class="text-muted text-xs">Stock general en orden</span>
     {% endif %}
   </div>
-  <a href="{% url 'inventario:nuevo' %}" class="btn btn-primary">
+  <a href="{% url 'inventario:nuevo' %}" class="btn btn-primary fw-semibold">
     + Nuevo producto
   </a>
 </div>
 
-{% if messages %}
-  {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
-      {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-  {% endfor %}
-{% endif %}
-
+<!-- Tabla de productos -->
 <div class="card border-0 shadow-sm">
   <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
+    <table class="table table-striped table-hover align-middle mb-0">
       <thead class="table-dark">
         <tr>
           <th>Producto</th>
@@ -39,51 +39,81 @@
       </thead>
       <tbody>
         {% for p in productos %}
-        <tr class="{% if not p.activo %}table-secondary text-muted{% endif %}">
+        <tr class="{% if not p.activo %}opacity-60{% endif %}">
+
+          <!-- Imagen + nombre + marca -->
           <td>
             <div class="d-flex align-items-center gap-2">
               {% if p.imagen %}
-                <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}" width="40" height="40"
-                     class="rounded object-fit-cover border">
+                <img src="{% static p.imagen %}" alt="{{ p.nombre }}"
+                     width="40" height="40"
+                     class="rounded object-fit-contain border flex-shrink-0 bg-white p-1"
+                     loading="lazy">
               {% else %}
-                <div class="bg-light border rounded d-flex align-items-center justify-content-center"
-                     style="width:40px;height:40px;font-size:.7rem;color:#aaa;">Sin<br>img</div>
+                <div class="bg-light border rounded d-flex align-items-center
+                            justify-content-center flex-shrink-0 text-muted"
+                     style="width:40px;height:40px;font-size:.6rem;line-height:1.2;text-align:center;">
+                  Sin<br>img
+                </div>
               {% endif %}
               <div>
-                <div class="fw-semibold">{{ p.nombre }}</div>
-                <div class="text-muted small">{{ p.marca }}</div>
+                <div class="fw-semibold lh-tight">{{ p.nombre }}</div>
+                <div class="text-muted text-xs">{{ p.marca }}</div>
               </div>
             </div>
           </td>
-          <td>{{ p.categoria }}</td>
+
+          <!-- Categoría -->
           <td>
-            <span class="small">{{ p.material|default:"—" }}</span>
-            {% if p.forma %}<br><span class="small text-muted">{{ p.forma }}</span>{% endif %}
+            <span class="badge bg-light text-dark border" style="font-size:.7rem;font-weight:600;">
+              {{ p.categoria }}
+            </span>
           </td>
-          <td class="text-end fw-semibold">${{ p.precio|floatformat:0 }}</td>
+
+          <!-- Material / forma -->
+          <td>
+            <span class="small text-body">{{ p.material|default:"—" }}</span>
+            {% if p.forma %}
+              <br><span class="text-muted text-xs">{{ p.forma }}</span>
+            {% endif %}
+          </td>
+
+          <!-- Precio -->
+          <td class="text-end fw-semibold num">${{ p.precio|precio_ar }}</td>
+
+          <!-- Stock -->
           <td class="text-center">
             {% if p.activo %}
               {% if p.stock_actual == 0 %}
-                <span class="badge bg-danger">Sin stock</span>
+                <span class="badge bg-danger badge-estado">Sin stock</span>
               {% elif p.stock_critico %}
-                <span class="badge bg-warning text-dark">⚠ {{ p.stock_actual }}/{{ p.stock_minimo }}</span>
+                <span class="badge bg-warning text-dark badge-estado">
+                  ⚠ {{ p.stock_actual }}/{{ p.stock_minimo }}
+                </span>
               {% else %}
-                <span class="text-success small">{{ p.stock_actual }}/{{ p.stock_minimo }}</span>
+                <span class="small text-success fw-semibold">
+                  {{ p.stock_actual }}/{{ p.stock_minimo }}
+                </span>
               {% endif %}
             {% else %}
-              <span class="text-muted small">{{ p.stock_actual }}/{{ p.stock_minimo }}</span>
+              <span class="small text-muted">{{ p.stock_actual }}/{{ p.stock_minimo }}</span>
             {% endif %}
           </td>
+
+          <!-- Estado activo -->
           <td class="text-center">
             {% if p.activo %}
-              <span class="badge bg-success">Activo</span>
+              <span class="badge bg-success badge-estado">Activo</span>
             {% else %}
-              <span class="badge bg-secondary">Inactivo</span>
+              <span class="badge bg-secondary badge-estado">Inactivo</span>
             {% endif %}
           </td>
+
+          <!-- Acciones -->
           <td class="text-center">
             <div class="btn-group btn-group-sm">
-              <a href="{% url 'inventario:editar' p.pk %}" class="btn btn-outline-primary">Editar</a>
+              <a href="{% url 'inventario:editar' p.pk %}"
+                 class="btn btn-outline-primary">Editar</a>
               <form action="{% url 'inventario:toggle' p.pk %}" method="post" class="d-inline">
                 {% csrf_token %}
                 <button type="submit"
@@ -95,11 +125,21 @@
             </div>
           </td>
         </tr>
+
         {% empty %}
-        <tr><td colspan="7" class="text-center py-4 text-muted">No hay productos registrados.</td></tr>
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <span class="empty-icon">📦</span>
+              <p class="empty-title">No hay productos registrados</p>
+              <p class="empty-sub">Usá el botón "Nuevo producto" para empezar.</p>
+            </div>
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+
 {% endblock %}

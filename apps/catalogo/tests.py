@@ -1,6 +1,10 @@
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
+
+from apps.inventario.models import Categoria, Producto
 
 User = get_user_model()
 
@@ -63,3 +67,83 @@ class CatalogoRolScriptTest(TestCase):
         r = self._get_catalogo(self.gerencia)
         self.assertContains(r, 'USER_ROL')
         self.assertContains(r, '"gerencia"')
+
+
+# ── Vista detalle /catalogo/<pk>/ ─────────────────────────────────────────────
+
+class DetalleViewTest(TestCase):
+    def setUp(self):
+        self.cat_arm = Categoria.objects.create(nombre="Armazones")
+        self.cat_cri = Categoria.objects.create(nombre="Cristales")
+        self.cliente = make_user("det_cli@test.com", "cliente")
+        self.client  = Client()
+        self.client.force_login(self.cliente)
+
+        self.armazon = Producto.objects.create(
+            nombre="Clubmaster", marca="Ray-Ban",
+            precio=Decimal("142000"), stock_actual=8, stock_minimo=3,
+            categoria=self.cat_arm,
+        )
+        self.cristal = Producto.objects.create(
+            nombre="Varilux", marca="Essilor",
+            precio=Decimal("65000"), stock_actual=10, stock_minimo=5,
+            categoria=self.cat_cri,
+        )
+
+    def test_detalle_armazon_incluye_boton_vto(self):
+        r = self.client.get(reverse("catalogo:detalle", args=[self.armazon.pk]))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.context["es_armazon"])
+        self.assertContains(r, "Prueba Virtual")
+
+    def test_detalle_cristal_no_incluye_boton_vto(self):
+        r = self.client.get(reverse("catalogo:detalle", args=[self.cristal.pk]))
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(r.context["es_armazon"])
+        self.assertNotContains(r, "Prueba Virtual")
+
+    def test_detalle_404_para_producto_inactivo(self):
+        self.armazon.activo = False
+        self.armazon.save()
+        r = self.client.get(reverse("catalogo:detalle", args=[self.armazon.pk]))
+        self.assertEqual(r.status_code, 404)
+
+
+# ── API /api/filtros/ — sin duplicados (DISTINCT) ────────────────────────────
+
+class FiltrosDISTINCTTest(TestCase):
+    """
+    Verifica que /api/filtros/ devuelve cada valor exactamente una vez,
+    incluso cuando hay múltiples productos con el mismo material/forma/marca.
+    El Meta.ordering del modelo Producto rompía DISTINCT en PostgreSQL si no
+    se limpia antes de la consulta.
+    """
+    def setUp(self):
+        self.cat = Categoria.objects.create(nombre="Armazones")
+        self.cliente = make_user("filt@test.com", "cliente")
+        self.client  = Client()
+        self.client.force_login(self.cliente)
+
+        for i in range(3):
+            Producto.objects.create(
+                nombre=f"Armazón {i}", marca="Ray-Ban",
+                precio=Decimal("50000"), stock_actual=5, stock_minimo=2,
+                categoria=self.cat,
+                material="O-Matter", forma="Cuadrado",
+            )
+
+    def test_marcas_sin_duplicados(self):
+        r = self.client.get("/api/filtros/")
+        self.assertEqual(r.status_code, 200)
+        marcas = r.json()["marcas"]
+        self.assertEqual(len(marcas), len(set(marcas)))
+
+    def test_materiales_sin_duplicados(self):
+        r = self.client.get("/api/filtros/")
+        materiales = r.json()["materiales"]
+        self.assertEqual(len(materiales), len(set(materiales)))
+
+    def test_formas_sin_duplicados(self):
+        r = self.client.get("/api/filtros/")
+        formas = r.json()["formas"]
+        self.assertEqual(len(formas), len(set(formas)))

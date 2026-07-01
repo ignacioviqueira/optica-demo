@@ -24,9 +24,14 @@ class Producto(models.Model):
     categoria = models.ForeignKey(
         Categoria, on_delete=models.PROTECT, related_name="productos"
     )
-    imagen = models.ImageField(upload_to="productos/", null=True, blank=True)
+    imagen = models.CharField(max_length=200, blank=True, default="")
+    # PNG con fondo transparente usado solo por el probador virtual (VTO)
+    imagen_vto = models.CharField(max_length=200, blank=True, default="")
     material = models.CharField(max_length=100, blank=True)
     forma = models.CharField(max_length=100, blank=True)
+    color = models.CharField(max_length=100, blank=True)
+    medidas = models.CharField(max_length=100, blank=True)
+    caracteristicas = models.JSONField(default=list, blank=True)
     # Baja lógica: oculta del catálogo pero conserva el histórico (HU-02)
     activo = models.BooleanField(default=True)
 
@@ -52,3 +57,21 @@ class Producto(models.Model):
         self.stock_actual = models.F("stock_actual") - cantidad
         self.save(update_fields=["stock_actual"])
         self.refresh_from_db(fields=["stock_actual"])
+
+
+class ProductoImagen(models.Model):
+    """Imágenes de galería extra de un producto (ángulos, detalles)."""
+
+    producto = models.ForeignKey(
+        Producto, on_delete=models.CASCADE, related_name="imagenes"
+    )
+    imagen = models.CharField(max_length=200)
+    orden = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["orden"]
+        verbose_name = "Imagen de producto"
+        verbose_name_plural = "Imágenes de producto"
+
+    def __str__(self):
+        return f"{self.producto} — imagen {self.orden}"

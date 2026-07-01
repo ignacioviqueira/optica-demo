@@ -4,28 +4,53 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Óptica Demo{% endblock %}</title>
+
+  <!-- Inter — Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   {% load static %}
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
 </head>
 <body>
 
-<nav class="navbar navbar-expand-md navbar-dark bg-dark px-3">
-  <a class="navbar-brand fw-bold" href="/">Optica Demo</a>
+<!-- ── Navbar ──────────────────────────────────────────────────────────────── -->
+<nav class="navbar navbar-expand-md navbar-optica px-3">
 
-  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+  <!-- Logo + marca -->
+  <a class="navbar-brand d-flex align-items-center" href="/">
+    <!-- Ícono de anteojos (SVG inline, sin dependencias externas) -->
+    <svg width="26" height="14" viewBox="0 0 32 16" fill="none"
+         xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="1" y="2" width="12" height="12" rx="6"
+            stroke="white" stroke-width="2"/>
+      <rect x="19" y="2" width="12" height="12" rx="6"
+            stroke="white" stroke-width="2"/>
+      <path d="M13 8h6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      <path d="M1 6C1 6 0 4 0 4" stroke="white" stroke-width="1.5"
+            stroke-linecap="round"/>
+      <path d="M31 6C31 6 32 4 32 4" stroke="white" stroke-width="1.5"
+            stroke-linecap="round"/>
+    </svg>
+    Óptica
+  </a>
+
+  <button class="navbar-toggler border-0" type="button"
+          data-bs-toggle="collapse" data-bs-target="#navMenu"
+          aria-controls="navMenu" aria-expanded="false" aria-label="Menú">
     <span class="navbar-toggler-icon"></span>
   </button>
 
   <div class="collapse navbar-collapse" id="navMenu">
     {% if user.is_authenticated %}
-    <ul class="navbar-nav me-auto mb-2 mb-md-0">
-      <!-- Catálogo: todos los roles -->
+    <ul class="navbar-nav me-auto mb-2 mb-md-0 gap-1">
+
       <li class="nav-item">
         <a class="nav-link" href="{% url 'catalogo:index' %}">Catálogo</a>
       </li>
 
-      <!-- Gerencia: inventario y dashboard -->
       {% if user.rol == "gerencia" %}
       <li class="nav-item">
         <a class="nav-link" href="{% url 'inventario:lista' %}">Inventario</a>
@@ -35,55 +60,78 @@
       </li>
       {% endif %}
 
-      <!-- Cliente: mis pedidos -->
       {% if user.rol == "cliente" %}
       <li class="nav-item">
         <a class="nav-link" href="{% url 'pedidos:historial' %}">Mis pedidos</a>
       </li>
       {% endif %}
 
-      <!-- Ventas y Gerencia: panel operativo de pedidos -->
       {% if user.rol == "ventas" or user.rol == "gerencia" %}
       <li class="nav-item">
         <a class="nav-link" href="{% url 'pedidos:operativo' %}">Pedidos</a>
       </li>
       {% endif %}
+
     </ul>
     {% endif %}
 
-    <div class="ms-auto d-flex align-items-center gap-3">
+    <!-- Zona derecha -->
+    <div class="ms-auto d-flex align-items-center gap-2">
       {% if user.is_authenticated %}
+
         <!-- Carrito (solo clientes) -->
         {% if user.rol == "cliente" %}
-        <a href="{% url 'pedidos:carrito' %}" class="btn btn-outline-light btn-sm position-relative">
+        <a href="{% url 'pedidos:carrito' %}"
+           class="btn btn-outline-light btn-sm position-relative me-1">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none"
+               stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L19 6H5"/>
+            <circle cx="9" cy="19" r="1"/><circle cx="17" cy="19" r="1"/>
+          </svg>
           Carrito
           <span id="badge-carrito"
-                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
-            0
-          </span>
+                class="position-absolute top-0 start-100 translate-middle
+                       badge rounded-pill bg-danger d-none"
+                style="font-size:.6rem;">0</span>
         </a>
         {% endif %}
 
-        <span class="text-white-50 small d-none d-md-inline">
+        <!-- Nombre + rol -->
+        <span class="navbar-user-name d-none d-md-inline">
           {{ user.get_full_name|default:user.email }}
         </span>
-        <span class="badge bg-secondary text-uppercase small">{{ user.get_rol_display }}</span>
+
+        {% if user.rol == "gerencia" %}
+          <span class="badge badge-rol badge-rol-gerencia">{{ user.get_rol_display }}</span>
+        {% elif user.rol == "ventas" %}
+          <span class="badge badge-rol badge-rol-ventas">{{ user.get_rol_display }}</span>
+        {% else %}
+          <span class="badge badge-rol badge-rol-cliente">{{ user.get_rol_display }}</span>
+        {% endif %}
+
+        <!-- Cerrar sesión -->
         <form action="{% url 'cuentas:logout' %}" method="post" class="d-inline m-0">
           {% csrf_token %}
           <button type="submit" class="btn btn-outline-light btn-sm">Salir</button>
         </form>
+
       {% else %}
-        <a href="{% url 'cuentas:login' %}" class="btn btn-outline-light btn-sm">Iniciar sesión</a>
-        <a href="{% url 'cuentas:registro' %}" class="btn btn-light btn-sm">Crear cuenta</a>
+        <a href="{% url 'cuentas:login' %}"
+           class="btn btn-outline-light btn-sm">Iniciar sesión</a>
+        <a href="{% url 'cuentas:registro' %}"
+           class="btn btn-light btn-sm fw-semibold">Crear cuenta</a>
       {% endif %}
     </div>
   </div>
 </nav>
 
+<!-- ── Flash messages ───────────────────────────────────────────────────────── -->
 {% if messages %}
   <div class="container mt-3">
     {% for message in messages %}
-      <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+      <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show
+                  rounded-3 shadow-sm" role="alert">
         {{ message }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
@@ -91,7 +139,8 @@
   </div>
 {% endif %}
 
-<main class="container py-4">
+<!-- ── Contenido principal ──────────────────────────────────────────────────── -->
+<main class="container">
   {% block content %}{% endblock %}
 </main>
 

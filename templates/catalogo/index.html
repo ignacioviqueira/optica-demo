@@ -4,75 +4,358 @@
 {% block title %}Catálogo — Óptica Demo{% endblock %}
 
 {% block content %}
-<div class="row g-4">
+<style>
+  /* ── Tarjetas de producto ────────────────────────────────────────── */
+  .producto-card {
+    transition: transform .15s ease, box-shadow .15s ease;
+    cursor: pointer;
+  }
+  .producto-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 .625rem 1.5rem rgba(15,23,42,.13) !important;
+  }
+  .card-img-wrap {
+    background: #fff;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    border-radius: .75rem .75rem 0 0;
+    overflow: hidden;
+  }
+  .card-img-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transition: transform .25s ease;
+  }
+  .producto-card:hover .card-img-wrap img { transform: scale(1.04); }
 
-  <!-- Sidebar de filtros -->
-  <div class="col-12 col-md-3" id="sidebar">
-    <div class="card border-0 shadow-sm sticky-top" style="top:80px;">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h6 class="fw-bold mb-0">Filtros</h6>
-          <button class="btn btn-link btn-sm p-0 text-muted" id="btn-limpiar">Limpiar</button>
+  .card-marca {
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    line-height: 1.2;
+  }
+  .card-nombre {
+    font-size: .9375rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.3;
+    letter-spacing: -.01em;
+  }
+  .card-nombre:hover { color: var(--brand-mid); }
+  .card-attrs {
+    font-size: .78rem;
+    color: #94a3b8;
+    min-height: 1.05rem;
+    line-height: 1.4;
+  }
+  .card-precio {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #1e293b;
+    letter-spacing: -.03em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .card-actions { display: flex; gap: .4rem; }
+  .card-actions .btn { font-size: .8rem; }
+
+  /* ── Acordeón de filtros ─────────────────────────────────────────── */
+  .filtro-grupo-header {
+    cursor: pointer;
+    transition: background .1s;
+    line-height: 1.3;
+  }
+  .filtro-grupo-header:hover { background: #f8fafc !important; }
+  .filtro-arrow {
+    font-size: .72rem;
+    color: #94a3b8;
+    transition: transform .18s;
+    display: inline-block;
+    line-height: 1;
+  }
+  .filtro-grupo-header.collapsed .filtro-arrow { transform: rotate(-90deg); }
+</style>
+
+<!-- ── Botón Filtros — solo mobile ───────────────────────────────────── -->
+<div class="d-flex d-md-none justify-content-between align-items-center mb-3">
+  <h5 class="mb-0 fw-bold" style="color:var(--brand)">Catálogo</h5>
+  <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2"
+          data-bs-toggle="offcanvas" data-bs-target="#filtrosDrawer" aria-controls="filtrosDrawer">
+    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5z"/>
+    </svg>
+    Filtros
+    <span class="badge bg-primary rounded-pill d-none" id="badge-filtros-activos" style="font-size:.58rem;padding:.28em .6em;"></span>
+  </button>
+</div>
+
+<!-- ── Offcanvas (mobile drawer) ──────────────────────────────────────── -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="filtrosDrawer"
+     aria-labelledby="filtrosDrawerLabel" style="max-width:300px;">
+  <div class="offcanvas-header border-bottom py-3">
+    <h6 class="offcanvas-title fw-bold mb-0" id="filtrosDrawerLabel">Filtros</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+  </div>
+  <div class="offcanvas-body p-0 d-flex flex-column" style="min-height:0;">
+    <div class="px-3 py-2 border-bottom">
+      <button type="button" class="btn btn-link btn-sm p-0 text-danger text-decoration-none fw-medium"
+              id="mob-btn-limpiar" style="font-size:.8rem;">✕ Limpiar todo</button>
+    </div>
+
+    <div class="overflow-auto flex-grow-1">
+
+      <!-- Categoría (expandido) -->
+      <div class="filtro-grupo border-bottom">
+        <button type="button"
+                class="filtro-grupo-header w-100 d-flex justify-content-between align-items-center px-3 py-2 bg-transparent border-0 text-start"
+                data-filtro-body="mob-body-categorias">
+          <span class="small fw-semibold text-uppercase" style="color:#64748b;letter-spacing:.06em;">Categoría</span>
+          <div class="d-flex align-items-center gap-1">
+            <span class="badge bg-primary rounded-pill filtro-count d-none"
+                  style="font-size:.58rem;padding:.28em .6em;"
+                  data-count-group="mob-filtro-categorias"></span>
+            <span class="filtro-arrow">▾</span>
+          </div>
+        </button>
+        <div id="mob-body-categorias" class="px-3 pb-2">
+          <div id="mob-filtro-categorias" class="d-flex flex-column gap-1"></div>
         </div>
+      </div>
 
-        <!-- Categoría -->
-        <div class="mb-3">
-          <label class="form-label small fw-semibold text-uppercase text-muted">Categoría</label>
-          <div id="filtro-categorias" class="d-flex flex-column gap-1"></div>
+      <!-- Marca (expandido) -->
+      <div class="filtro-grupo border-bottom">
+        <button type="button"
+                class="filtro-grupo-header w-100 d-flex justify-content-between align-items-center px-3 py-2 bg-transparent border-0 text-start"
+                data-filtro-body="mob-body-marcas">
+          <span class="small fw-semibold text-uppercase" style="color:#64748b;letter-spacing:.06em;">Marca</span>
+          <div class="d-flex align-items-center gap-1">
+            <span class="badge bg-primary rounded-pill filtro-count d-none"
+                  style="font-size:.58rem;padding:.28em .6em;"
+                  data-count-group="mob-filtro-marcas"></span>
+            <span class="filtro-arrow">▾</span>
+          </div>
+        </button>
+        <div id="mob-body-marcas" class="px-3 pb-2">
+          <div id="mob-filtro-marcas" class="d-flex flex-column gap-1"></div>
         </div>
+      </div>
 
-        <!-- Marca -->
-        <div class="mb-3">
-          <label class="form-label small fw-semibold text-uppercase text-muted">Marca</label>
-          <div id="filtro-marcas" class="d-flex flex-column gap-1"></div>
+      <!-- Material (colapsado) -->
+      <div class="filtro-grupo border-bottom">
+        <button type="button"
+                class="filtro-grupo-header collapsed w-100 d-flex justify-content-between align-items-center px-3 py-2 bg-transparent border-0 text-start"
+                data-filtro-body="mob-body-materiales">
+          <span class="small fw-semibold text-uppercase" style="color:#64748b;letter-spacing:.06em;">Material</span>
+          <div class="d-flex align-items-center gap-1">
+            <span class="badge bg-primary rounded-pill filtro-count d-none"
+                  style="font-size:.58rem;padding:.28em .6em;"
+                  data-count-group="mob-filtro-materiales"></span>
+            <span class="filtro-arrow">▾</span>
+          </div>
+        </button>
+        <div id="mob-body-materiales" class="px-3 pb-2 d-none">
+          <div id="mob-filtro-materiales" class="d-flex flex-column gap-1"></div>
         </div>
+      </div>
 
-        <!-- Material -->
-        <div class="mb-3">
-          <label class="form-label small fw-semibold text-uppercase text-muted">Material</label>
-          <div id="filtro-materiales" class="d-flex flex-column gap-1"></div>
+      <!-- Forma (colapsado) -->
+      <div class="filtro-grupo border-bottom">
+        <button type="button"
+                class="filtro-grupo-header collapsed w-100 d-flex justify-content-between align-items-center px-3 py-2 bg-transparent border-0 text-start"
+                data-filtro-body="mob-body-formas">
+          <span class="small fw-semibold text-uppercase" style="color:#64748b;letter-spacing:.06em;">Forma</span>
+          <div class="d-flex align-items-center gap-1">
+            <span class="badge bg-primary rounded-pill filtro-count d-none"
+                  style="font-size:.58rem;padding:.28em .6em;"
+                  data-count-group="mob-filtro-formas"></span>
+            <span class="filtro-arrow">▾</span>
+          </div>
+        </button>
+        <div id="mob-body-formas" class="px-3 pb-2 d-none">
+          <div id="mob-filtro-formas" class="d-flex flex-column gap-1"></div>
         </div>
+      </div>
 
-        <!-- Forma -->
-        <div class="mb-3">
-          <label class="form-label small fw-semibold text-uppercase text-muted">Forma</label>
-          <div id="filtro-formas" class="d-flex flex-column gap-1"></div>
-        </div>
-
-        <!-- Precio -->
-        <div class="mb-3">
-          <label class="form-label small fw-semibold text-uppercase text-muted">Precio</label>
+      <!-- Precio (colapsado) -->
+      <div class="filtro-grupo">
+        <button type="button"
+                class="filtro-grupo-header collapsed w-100 d-flex justify-content-between align-items-center px-3 py-2 bg-transparent border-0 text-start"
+                data-filtro-body="mob-body-precio">
+          <span class="small fw-semibold text-uppercase" style="color:#64748b;letter-spacing:.06em;">Precio</span>
+          <span class="filtro-arrow">▾</span>
+        </button>
+        <div id="mob-body-precio" class="px-3 pb-2 d-none">
           <div class="d-flex gap-2">
-            <input type="number" class="form-control form-control-sm" id="precio-min"
+            <input type="number" class="form-control form-control-sm" id="mob-precio-min"
                    placeholder="Mín." min="0" step="1">
-            <input type="number" class="form-control form-control-sm" id="precio-max"
+            <input type="number" class="form-control form-control-sm" id="mob-precio-max"
                    placeholder="Máx." min="0" step="1">
           </div>
         </div>
+      </div>
 
-        <button class="btn btn-primary w-100" id="btn-filtrar">Aplicar filtros</button>
+    </div>
+
+    <!-- Aplicar (sticky abajo) -->
+    <div class="px-3 py-3 border-top bg-white">
+      <button type="button" class="btn btn-primary w-100" id="mob-btn-filtrar"
+              data-bs-dismiss="offcanvas">Aplicar filtros</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Layout principal ───────────────────────────────────────────────── -->
+<div class="row g-4">
+
+  <!-- Sidebar de filtros — desktop -->
+  <div class="col-md-3 d-none d-md-block" id="sidebar">
+    <div class="card border-0 shadow-sm sticky-top" style="top:80px;">
+      <div class="card-body p-0">
+
+        <div class="px-3 pt-3 pb-2 d-flex justify-content-between align-items-center border-bottom">
+          <span class="fw-bold small">Filtros</span>
+          <button type="button" class="btn btn-link btn-sm p-0 text-danger text-decoration-none fw-medium"
+                  id="btn-limpiar" style="font-size:.78rem;">✕ Limpiar todo</button>
+        </div>
+
+        <!-- Categoría (expandido) -->
+        <div class="filtro-grupo border-bottom">
+          <button type="button"
+                  class="filtro-grupo-header w-100 d-flex justify-content-between align-items-center px-3 py-2 bg-transparent border-0 text-start"
+                  data-filtro-body="body-categorias">
+            <span class="small fw-semibold text-uppercase" style="color:#64748b;letter-spacing:.06em;">Categoría</span>
+            <div class="d-flex align-items-center gap-1">
+              <span class="badge bg-primary rounded-pill filtro-count d-none"
+                    style="font-size:.58rem;padding:.28em .6em;"
+                    data-count-group="filtro-categorias"></span>
+              <span class="filtro-arrow">▾</span>
+            </div>
+          </button>
+          <div id="body-categorias" class="px-3 pb-2">
+            <div id="filtro-categorias" class="d-flex flex-column gap-1"></div>
+          </div>
+        </div>
+
+        <!-- Marca (expandido) -->
+        <div class="filtro-grupo border-bottom">
+          <button type="button"
+                  class="filtro-grupo-header w-100 d-flex justify-content-between align-items-center px-3 py-2 bg-transparent border-0 text-start"
+                  data-filtro-body="body-marcas">
+            <span class="small fw-semibold text-uppercase" style="color:#64748b;letter-spacing:.06em;">Marca</span>
+            <div class="d-flex align-items-center gap-1">
+              <span class="badge bg-primary rounded-pill filtro-count d-none"
+                    style="font-size:.58rem;padding:.28em .6em;"
+                    data-count-group="filtro-marcas"></span>
+              <span class="filtro-arrow">▾</span>
+            </div>
+          </button>
+          <div id="body-marcas" class="px-3 pb-2">
+            <div id="filtro-marcas" class="d-flex flex-column gap-1"></div>
+          </div>
+        </div>
+
+        <!-- Material (colapsado) -->
+        <div class="filtro-grupo border-bottom">
+          <button type="button"
+                  class="filtro-grupo-header collapsed w-100 d-flex justify-content-between align-items-center px-3 py-2 bg-transparent border-0 text-start"
+                  data-filtro-body="body-materiales">
+            <span class="small fw-semibold text-uppercase" style="color:#64748b;letter-spacing:.06em;">Material</span>
+            <div class="d-flex align-items-center gap-1">
+              <span class="badge bg-primary rounded-pill filtro-count d-none"
+                    style="font-size:.58rem;padding:.28em .6em;"
+                    data-count-group="filtro-materiales"></span>
+              <span class="filtro-arrow">▾</span>
+            </div>
+          </button>
+          <div id="body-materiales" class="px-3 pb-2 d-none">
+            <div id="filtro-materiales" class="d-flex flex-column gap-1"></div>
+          </div>
+        </div>
+
+        <!-- Forma (colapsado) -->
+        <div class="filtro-grupo border-bottom">
+          <button type="button"
+                  class="filtro-grupo-header collapsed w-100 d-flex justify-content-between align-items-center px-3 py-2 bg-transparent border-0 text-start"
+                  data-filtro-body="body-formas">
+            <span class="small fw-semibold text-uppercase" style="color:#64748b;letter-spacing:.06em;">Forma</span>
+            <div class="d-flex align-items-center gap-1">
+              <span class="badge bg-primary rounded-pill filtro-count d-none"
+                    style="font-size:.58rem;padding:.28em .6em;"
+                    data-count-group="filtro-formas"></span>
+              <span class="filtro-arrow">▾</span>
+            </div>
+          </button>
+          <div id="body-formas" class="px-3 pb-2 d-none">
+            <div id="filtro-formas" class="d-flex flex-column gap-1"></div>
+          </div>
+        </div>
+
+        <!-- Precio (colapsado) -->
+        <div class="filtro-grupo border-bottom">
+          <button type="button"
+                  class="filtro-grupo-header collapsed w-100 d-flex justify-content-between align-items-center px-3 py-2 bg-transparent border-0 text-start"
+                  data-filtro-body="body-precio">
+            <span class="small fw-semibold text-uppercase" style="color:#64748b;letter-spacing:.06em;">Precio</span>
+            <span class="filtro-arrow">▾</span>
+          </button>
+          <div id="body-precio" class="px-3 pb-2 d-none">
+            <div class="d-flex gap-2">
+              <input type="number" class="form-control form-control-sm" id="precio-min"
+                     placeholder="Mín." min="0" step="1">
+              <input type="number" class="form-control form-control-sm" id="precio-max"
+                     placeholder="Máx." min="0" step="1">
+            </div>
+          </div>
+        </div>
+
+        <div class="px-3 pt-2 pb-3">
+          <button type="button" class="btn btn-primary w-100 btn-sm" id="btn-filtrar">Aplicar filtros</button>
+        </div>
+
       </div>
     </div>
   </div>
 
-  <!-- Área principal -->
+  <!-- ── Área principal ──────────────────────────────────────────────── -->
   <div class="col-12 col-md-9">
-    <!-- Barra de búsqueda -->
-    <div class="d-flex gap-2 mb-4">
-      <input type="text" class="form-control" id="buscador"
-             placeholder="Buscar por nombre, marca...">
-      <button class="btn btn-outline-secondary" id="btn-buscar">Buscar</button>
+
+    <!-- Header: título (desktop) + búsqueda + orden -->
+    <div class="d-flex flex-wrap align-items-end gap-3 mb-4">
+      <div class="d-none d-md-block me-auto">
+        <h5 class="fw-bold mb-0" style="color:var(--brand);letter-spacing:-.02em;">Catálogo</h5>
+        <span class="text-muted" id="resultado-count" style="font-size:.8rem;"></span>
+      </div>
+      <div class="d-flex gap-2 flex-grow-1 flex-md-grow-0" style="max-width:520px;">
+        <input type="text" class="form-control form-control-sm" id="buscador"
+               placeholder="Buscar por nombre, marca…" style="min-width:0;">
+        <select class="form-select form-select-sm" id="ordenar"
+                style="min-width:128px;max-width:150px;">
+          <option value="">Relevancia</option>
+          <option value="precio_asc">↑ Precio</option>
+          <option value="precio_desc">↓ Precio</option>
+          <option value="nombre">A–Z</option>
+        </select>
+        <button class="btn btn-outline-secondary btn-sm" id="btn-buscar"
+                style="white-space:nowrap;">Buscar</button>
+      </div>
     </div>
 
     <!-- Estado: cargando / sin resultados -->
-    <div id="estado-carga" class="text-center py-5 text-muted d-none">
-      <div class="spinner-border text-primary mb-2" role="status"></div>
-      <div>Cargando productos…</div>
+    <div id="estado-carga" class="empty-state d-none">
+      <div class="spinner-border text-primary mb-3" role="status" style="width:2.25rem;height:2.25rem;border-width:3px;"></div>
+      <p class="empty-sub mb-0">Cargando productos…</p>
     </div>
-    <div id="sin-resultados" class="text-center py-5 d-none">
-      <div class="display-6 mb-2">&#128269;</div>
-      <p class="text-muted">No encontramos productos con esos filtros.</p>
-      <button class="btn btn-outline-primary" id="btn-limpiar-sr">Limpiar filtros</button>
+    <div id="sin-resultados" class="empty-state d-none">
+      <span class="empty-icon">🔍</span>
+      <p class="empty-title">Sin resultados</p>
+      <p class="empty-sub">Ningún producto coincide con los filtros aplicados.</p>
+      <button class="btn btn-outline-primary mt-3" id="btn-limpiar-sr">Limpiar filtros</button>
     </div>
 
     <!-- Grilla de productos -->
@@ -84,24 +367,30 @@
 <template id="tpl-tarjeta">
   <div class="col">
     <div class="card h-100 border-0 shadow-sm producto-card">
-      <a class="card-img-link" href="#">
-        <img src="" alt="" class="card-img-top"
-             style="height:200px;object-fit:cover;">
+
+      <!-- Imagen (clickeable) -->
+      <a class="card-img-link text-decoration-none d-block" href="#">
+        <div class="card-img-wrap">
+          <img src="" alt="" loading="lazy">
+        </div>
       </a>
-      <div class="card-body d-flex flex-column">
-        <span class="badge bg-secondary mb-1 align-self-start categoria-badge"></span>
-        <h6 class="card-title fw-bold mb-0 nombre-producto"></h6>
-        <small class="text-muted marca-producto mb-2"></small>
-        <div class="mt-auto">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="fw-bold fs-5 precio-producto"></span>
-            <span class="badge stock-badge"></span>
-          </div>
-          <div class="d-flex gap-1">
-            <a href="#" class="btn btn-outline-primary btn-sm flex-fill btn-vto">Prueba Virtual</a>
-            <button class="btn btn-primary btn-sm flex-fill btn-carrito"
-                    data-id="" data-nombre="" data-precio="">Añadir al carrito</button>
-          </div>
+
+      <div class="card-body d-flex flex-column px-3 pt-3 pb-3">
+        <!-- Marca -->
+        <div class="card-marca mb-1 marca-producto"></div>
+        <!-- Modelo (clickeable) -->
+        <a class="nombre-link text-decoration-none" href="#">
+          <div class="card-nombre mb-1 nombre-producto"></div>
+        </a>
+        <!-- Specs -->
+        <div class="card-attrs mb-auto attrs-producto"></div>
+        <!-- Precio -->
+        <div class="card-precio mt-2 mb-2 precio-producto"></div>
+        <!-- Acciones -->
+        <div class="card-actions mt-1 btn-grupo">
+          <a href="#" class="btn btn-outline-primary btn-sm flex-fill btn-vto d-none">Prueba Virtual</a>
+          <button class="btn btn-primary btn-sm flex-fill btn-carrito"
+                  data-id="" data-nombre="" data-precio="">+ Carrito</button>
         </div>
       </div>
     </div>
@@ -114,7 +403,6 @@
 const API_PRODUCTOS = "/api/productos/";
 const API_FILTROS   = "/api/filtros/";
 const API_CATS      = "/api/categorias/";
-const IMG_FALLBACK  = "{% static 'img/producto-sin-imagen.svg' %}";
 const USER_ROL      = "{{ user.rol }}";
 
 let categorias = [];
@@ -123,6 +411,7 @@ let categorias = [];
 
 function buildCheckboxGroup(containerId, items, valueKey, labelKey) {
   const el = document.getElementById(containerId);
+  if (!el) return;
   el.innerHTML = "";
   items.forEach(item => {
     const id = `cb-${containerId}-${item[valueKey]}`.replace(/\s+/g, "_");
@@ -140,23 +429,29 @@ function checkedValues(group) {
     .map(el => el.value);
 }
 
+function mergeValues(deskGroup, mobGroup) {
+  return [...new Set([...checkedValues(deskGroup), ...checkedValues(mobGroup)])];
+}
+
 function buildParams() {
-  const cats   = checkedValues("filtro-categorias");
-  const marcas = checkedValues("filtro-marcas");
-  const mats   = checkedValues("filtro-materiales");
-  const formas = checkedValues("filtro-formas");
-  const pmin   = document.getElementById("precio-min").value;
-  const pmax   = document.getElementById("precio-max").value;
+  const cats   = mergeValues("filtro-categorias",  "mob-filtro-categorias");
+  const marcas = mergeValues("filtro-marcas",       "mob-filtro-marcas");
+  const mats   = mergeValues("filtro-materiales",   "mob-filtro-materiales");
+  const formas = mergeValues("filtro-formas",        "mob-filtro-formas");
+  const pmin   = (document.getElementById("precio-min").value
+               || document.getElementById("mob-precio-min").value);
+  const pmax   = (document.getElementById("precio-max").value
+               || document.getElementById("mob-precio-max").value);
   const q      = document.getElementById("buscador").value.trim();
 
   const p = new URLSearchParams();
-  if (cats.length === 1)   p.set("categoria", cats[0]);
+  if (cats.length === 1) p.set("categoria", cats[0]);
   marcas.forEach(m => p.append("marca", m));
   mats.forEach(m   => p.append("material", m));
   formas.forEach(f  => p.append("forma", f));
   if (pmin) p.set("precio_min", pmin);
   if (pmax) p.set("precio_max", pmax);
-  if (q)   p.set("q", q);
+  if (q)    p.set("q", q);
   return p;
 }
 
@@ -165,13 +460,77 @@ function catNombre(id) {
   return c ? c.nombre : "";
 }
 
+function formatPrecio(n) {
+  return "$" + Number(n).toLocaleString("es-AR", { maximumFractionDigits: 0 });
+}
+
+function sortProductos(productos, orden) {
+  if (!orden) return productos;
+  const arr = [...productos];
+  if      (orden === "precio_asc")  arr.sort((a, b) => a.precio - b.precio);
+  else if (orden === "precio_desc") arr.sort((a, b) => b.precio - a.precio);
+  else if (orden === "nombre")      arr.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  return arr;
+}
+
+// ── Contadores de filtros activos ─────────────────────────────────────────────
+
+function actualizarContadores() {
+  const grupos = [
+    ["filtro-categorias",  "mob-filtro-categorias"],
+    ["filtro-marcas",      "mob-filtro-marcas"],
+    ["filtro-materiales",  "mob-filtro-materiales"],
+    ["filtro-formas",      "mob-filtro-formas"],
+  ];
+  let total = 0;
+  grupos.forEach(([desk, mob]) => {
+    const count = mergeValues(desk, mob).length;
+    total += count;
+    [desk, mob].forEach(group => {
+      const badge = document.querySelector(`[data-count-group="${group}"]`);
+      if (badge) {
+        badge.textContent = count;
+        badge.classList.toggle("d-none", count === 0);
+      }
+    });
+  });
+  const badgeTotal = document.getElementById("badge-filtros-activos");
+  if (badgeTotal) {
+    badgeTotal.textContent = total;
+    badgeTotal.classList.toggle("d-none", total === 0);
+  }
+}
+
+// ── Acordeón ──────────────────────────────────────────────────────────────────
+
+document.querySelectorAll(".filtro-grupo-header").forEach(btn => {
+  btn.addEventListener("click", function () {
+    const bodyId = this.dataset.filtroBody;
+    const body   = document.getElementById(bodyId);
+    if (!body) return;
+    const closing = !body.classList.contains("d-none");
+    body.classList.toggle("d-none", closing);
+    this.classList.toggle("collapsed", closing);
+  });
+});
+
+document.addEventListener("change", e => {
+  if (e.target.classList.contains("filtro-check")) actualizarContadores();
+});
+
 // ── Renderizado ───────────────────────────────────────────────────────────────
 
 function renderProductos(productos) {
-  const grilla = document.getElementById("grilla-productos");
-  const noRes  = document.getElementById("sin-resultados");
-  const tpl    = document.getElementById("tpl-tarjeta");
+  const grilla  = document.getElementById("grilla-productos");
+  const noRes   = document.getElementById("sin-resultados");
+  const countEl = document.getElementById("resultado-count");
+  const tpl     = document.getElementById("tpl-tarjeta");
   grilla.innerHTML = "";
+
+  if (countEl) {
+    const n = productos.length;
+    countEl.textContent = n === 1 ? "1 modelo" : `${n} modelos`;
+  }
 
   if (!productos.length) {
     noRes.classList.remove("d-none");
@@ -179,43 +538,52 @@ function renderProductos(productos) {
   }
   noRes.classList.add("d-none");
 
-  productos.forEach(p => {
-    const clone = tpl.content.cloneNode(true);
-    const card  = clone.querySelector(".producto-card");
+  const esStaff  = USER_ROL === "ventas" || USER_ROL === "gerencia";
+  const orden    = document.getElementById("ordenar").value;
+  const lista    = sortProductos(productos, orden);
 
-    const img = clone.querySelector("img.card-img-top");
-    img.src = p.imagen_url || IMG_FALLBACK;
-    img.alt = p.nombre;
-    img.onerror = () => { img.src = IMG_FALLBACK; };
-
+  lista.forEach(p => {
+    const clone     = tpl.content.cloneNode(true);
+    const catNom    = catNombre(p.categoria);
     const detailUrl = `/catalogo/${p.id}/`;
-    clone.querySelector("a.card-img-link").href = detailUrl;
+    const esArmazon = catNom === "Armazones";
 
-    clone.querySelector(".categoria-badge").textContent = catNombre(p.categoria);
-    clone.querySelector(".nombre-producto").textContent = p.nombre;
-    clone.querySelector(".marca-producto").textContent  = p.marca;
-    clone.querySelector(".precio-producto").textContent =
-      `$${Number(p.precio).toLocaleString("es-AR", {maximumFractionDigits: 0})}`;
-
-    const stockBadge = clone.querySelector(".stock-badge");
-    if (p.stock_actual === 0) {
-      stockBadge.textContent = "Sin stock";
-      stockBadge.classList.add("bg-danger");
-    } else if (p.stock_critico) {
-      stockBadge.textContent = `⚠ Stock bajo (${p.stock_actual})`;
-      stockBadge.classList.add("bg-warning", "text-dark");
+    // Imagen
+    const img = clone.querySelector(".card-img-wrap img");
+    if (p.imagen_url) {
+      img.src = p.imagen_url;
+      img.alt = `${p.marca} ${p.nombre}`;
     } else {
-      stockBadge.classList.add("d-none");
+      img.style.display = "none";
+      clone.querySelector(".card-img-wrap").insertAdjacentHTML("beforeend",
+        `<span class="text-muted fw-bold" style="font-size:2.5rem;">${p.marca[0]}</span>`);
     }
 
-    if (p.stock_critico && p.stock_actual > 0) {
-      card.classList.add("border", "border-warning");
+    // Links: imagen + nombre → detalle
+    clone.querySelector("a.card-img-link").href = detailUrl;
+    clone.querySelector("a.nombre-link").href   = detailUrl;
+
+    // Texto
+    clone.querySelector(".marca-producto").textContent  = p.marca.toUpperCase();
+    clone.querySelector(".nombre-producto").textContent = p.nombre;
+
+    const attrs = [p.material, p.forma].filter(Boolean).join(" · ");
+    clone.querySelector(".attrs-producto").textContent = attrs || "";
+
+    clone.querySelector(".precio-producto").textContent = formatPrecio(p.precio);
+
+    // Botón VTO — solo armazones
+    const btnVto = clone.querySelector(".btn-vto");
+    if (esArmazon) {
+      btnVto.href = `/vto/?producto=${p.id}`;
+      btnVto.classList.remove("d-none");
+    } else {
+      btnVto.remove();
     }
 
-    clone.querySelector(".btn-vto").href = `/vto/?producto=${p.id}`;
-
+    // Botón carrito
     const btnCarrito = clone.querySelector(".btn-carrito");
-    if (USER_ROL === "ventas" || USER_ROL === "gerencia") {
+    if (esStaff) {
       btnCarrito.remove();
     } else {
       btnCarrito.dataset.id     = p.id;
@@ -225,6 +593,8 @@ function renderProductos(productos) {
         btnCarrito.disabled = true;
         btnCarrito.title    = "Sin stock disponible";
       }
+      // Si no hay botón VTO, el carrito ocupa todo el ancho
+      if (!esArmazon) btnCarrito.classList.add("w-100");
     }
 
     grilla.appendChild(clone);
@@ -241,13 +611,20 @@ async function cargarFiltros() {
   const catsData = await catsRes.json();
   categorias     = catsData.results ?? catsData;
 
-  buildCheckboxGroup("filtro-categorias", categorias, "id", "nombre");
-  buildCheckboxGroup("filtro-marcas",
-    (filtros.marcas || []).map(m => ({v: m, l: m})), "v", "l");
-  buildCheckboxGroup("filtro-materiales",
-    (filtros.materiales || []).map(m => ({v: m, l: m})), "v", "l");
-  buildCheckboxGroup("filtro-formas",
-    (filtros.formas || []).map(f => ({v: f, l: f})), "v", "l");
+  buildCheckboxGroup("filtro-categorias",     categorias, "id", "nombre");
+  buildCheckboxGroup("mob-filtro-categorias", categorias, "id", "nombre");
+
+  const marcasItems = (filtros.marcas || []).map(m => ({v: m, l: m}));
+  buildCheckboxGroup("filtro-marcas",     marcasItems, "v", "l");
+  buildCheckboxGroup("mob-filtro-marcas", marcasItems, "v", "l");
+
+  const matsItems = (filtros.materiales || []).map(m => ({v: m, l: m}));
+  buildCheckboxGroup("filtro-materiales",     matsItems, "v", "l");
+  buildCheckboxGroup("mob-filtro-materiales", matsItems, "v", "l");
+
+  const formasItems = (filtros.formas || []).map(f => ({v: f, l: f}));
+  buildCheckboxGroup("filtro-formas",     formasItems, "v", "l");
+  buildCheckboxGroup("mob-filtro-formas", formasItems, "v", "l");
 }
 
 async function cargarProductos() {
@@ -262,10 +639,14 @@ async function cargarProductos() {
     const params = buildParams();
     const res    = await fetch(`${API_PRODUCTOS}?${params}`);
     const data   = await res.json();
-    const items  = data.results ?? data;
-    renderProductos(items);
+    renderProductos(data.results ?? data);
   } catch (e) {
     console.error("Error al cargar productos:", e);
+    noRes.innerHTML = `
+      <div class="display-6 mb-2">⚠️</div>
+      <p class="text-muted">No se pudo cargar el catálogo. Verificá tu conexión.</p>
+      <button class="btn btn-outline-primary" onclick="cargarProductos()">Reintentar</button>`;
+    noRes.classList.remove("d-none");
   } finally {
     carga.classList.add("d-none");
   }
@@ -273,9 +654,13 @@ async function cargarProductos() {
 
 function limpiarFiltros() {
   document.querySelectorAll(".filtro-check").forEach(cb => cb.checked = false);
-  document.getElementById("precio-min").value = "";
-  document.getElementById("precio-max").value = "";
-  document.getElementById("buscador").value   = "";
+  ["precio-min", "precio-max", "mob-precio-min", "mob-precio-max"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  document.getElementById("buscador").value = "";
+  document.getElementById("ordenar").value  = "";
+  actualizarContadores();
   cargarProductos();
 }
 
@@ -298,7 +683,7 @@ document.getElementById("grilla-productos").addEventListener("click", e => {
   btn.textContent = "✓ Agregado";
   btn.classList.replace("btn-primary", "btn-success");
   setTimeout(() => {
-    btn.textContent = "Añadir al carrito";
+    btn.textContent = "+ Carrito";
     btn.classList.replace("btn-success", "btn-primary");
   }, 1500);
 
@@ -317,10 +702,13 @@ function actualizarContadorCarrito() {
 
 // ── Eventos ───────────────────────────────────────────────────────────────────
 
-document.getElementById("btn-filtrar").addEventListener("click", cargarProductos);
-document.getElementById("btn-limpiar").addEventListener("click", limpiarFiltros);
+document.getElementById("btn-filtrar").addEventListener("click",    cargarProductos);
+document.getElementById("btn-limpiar").addEventListener("click",    limpiarFiltros);
 document.getElementById("btn-limpiar-sr").addEventListener("click", limpiarFiltros);
-document.getElementById("btn-buscar").addEventListener("click", cargarProductos);
+document.getElementById("btn-buscar").addEventListener("click",     cargarProductos);
+document.getElementById("mob-btn-filtrar").addEventListener("click", cargarProductos);
+document.getElementById("mob-btn-limpiar").addEventListener("click", limpiarFiltros);
+document.getElementById("ordenar").addEventListener("change", cargarProductos);
 document.getElementById("buscador").addEventListener("keydown", e => {
   if (e.key === "Enter") cargarProductos();
 });

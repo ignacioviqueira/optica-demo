@@ -232,3 +232,54 @@ class VTOViewTest(TestCase):
         self.client.force_login(self.cliente)
         r = self.client.get(reverse('vto:index') + '?producto=99999')
         self.assertEqual(r.status_code, 404)
+
+    def test_vto_usa_imagen_vto_para_overlay(self):
+        """Con imagen_vto seteada el context incluye producto_frame_url."""
+        self.prod.imagen_vto = "productos/rayban_clubmaster_vto.png"
+        self.prod.save()
+        self.client.force_login(self.cliente)
+        r = self.client.get(reverse('vto:index') + f'?producto={self.prod.pk}')
+        self.assertEqual(r.status_code, 200)
+        # La URL del frame debe contener el nombre del archivo VTO
+        frame_url = r.context.get('producto_frame_url')
+        self.assertIsNotNone(frame_url)
+        self.assertIn("rayban_clubmaster_vto", frame_url)
+
+    def test_vto_sin_imagen_vto_no_setea_frame_url(self):
+        """Sin imagen_vto no se pasa producto_frame_url al template."""
+        self.prod.imagen_vto = ""
+        self.prod.save()
+        self.client.force_login(self.cliente)
+        r = self.client.get(reverse('vto:index') + f'?producto={self.prod.pk}')
+        self.assertEqual(r.status_code, 200)
+        self.assertIsNone(r.context.get('producto_frame_url'))
+
+    def test_vto_pasa_armazones_al_context(self):
+        """El context incluye todos los armazones activos para el panel de thumbnails."""
+        self.client.force_login(self.cliente)
+        r = self.client.get(reverse('vto:index'))
+        self.assertEqual(r.status_code, 200)
+        armazones = r.context.get('armazones')
+        self.assertIsNotNone(armazones)
+        # El armazón creado en setUp está en Armazones y activo
+        ids = [a.id for a in armazones]
+        self.assertIn(self.prod.pk, ids)
+
+    def test_vto_armazones_excluye_inactivos(self):
+        """Un armazón inactivo no aparece en el panel de thumbnails."""
+        self.prod.activo = False
+        self.prod.save()
+        self.client.force_login(self.cliente)
+        r = self.client.get(reverse('vto:index'))
+        ids = [a.id for a in r.context['armazones']]
+        self.assertNotIn(self.prod.pk, ids)
+
+    def test_vto_armazones_solo_incluye_categoria_armazones(self):
+        """Cristales y lentes de contacto no aparecen en el panel de armazones."""
+        from apps.inventario.models import Categoria as Cat
+        cat_cristales = Cat.objects.create(nombre='Cristales')
+        cristal = make_producto(cat_cristales, nombre='Varilux VTO')
+        self.client.force_login(self.cliente)
+        r = self.client.get(reverse('vto:index'))
+        ids = [a.id for a in r.context['armazones']]
+        self.assertNotIn(cristal.pk, ids)

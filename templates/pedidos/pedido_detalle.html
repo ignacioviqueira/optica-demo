@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load inventario_extras %}
 {% block title %}Pedido #{{ pedido.pk }} — Óptica Demo{% endblock %}
 
 {% block content %}
@@ -51,15 +52,15 @@
               <td>{{ d.producto.nombre }}</td>
               <td class="text-muted small">{{ d.producto.marca }}</td>
               <td class="text-center">{{ d.cantidad }}</td>
-              <td class="text-end">${{ d.precio_unitario|floatformat:"0" }}</td>
-              <td class="text-end fw-semibold">${{ d.subtotal|floatformat:"0" }}</td>
+              <td class="text-end">${{ d.precio_unitario|precio_ar }}</td>
+              <td class="text-end fw-semibold">${{ d.subtotal|precio_ar }}</td>
             </tr>
             {% endfor %}
           </tbody>
           <tfoot class="fw-bold table-light">
             <tr>
               <td colspan="4" class="text-end">Total:</td>
-              <td class="text-end">${{ pedido.total|floatformat:"0" }}</td>
+              <td class="text-end">${{ pedido.total|precio_ar }}</td>
             </tr>
           </tfoot>
         </table>

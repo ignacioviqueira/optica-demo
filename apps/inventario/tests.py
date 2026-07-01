@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from .models import Categoria, Producto
+from .models import Categoria, Producto, ProductoImagen
 
 User = get_user_model()
 
@@ -239,3 +239,53 @@ class InventarioCRUDTest(TestCase):
             "categoria": self.cat.pk,
         })
         self.assertEqual(r.status_code, 403)
+
+
+# ── ProductoImagen ────────────────────────────────────────────────────────────
+
+class ProductoImagenTest(TestCase):
+    def setUp(self):
+        self.cat = Categoria.objects.create(nombre="Armazones")
+        self.prod = make_producto(
+            self.cat,
+            nombre="Clubmaster Optics",
+            marca="Ray-Ban",
+        )
+        self.prod.imagen = "productos/rayban_clubmaster_1.png"
+        self.prod.imagen_vto = "productos/rayban_clubmaster_vto.png"
+        self.prod.save()
+
+    def test_str_incluye_producto_y_orden(self):
+        img = ProductoImagen.objects.create(
+            producto=self.prod,
+            imagen="productos/rayban_clubmaster_2.png",
+            orden=1,
+        )
+        self.assertIn(str(self.prod), str(img))
+        self.assertIn("1", str(img))
+
+    def test_ordenacion_por_campo_orden(self):
+        ProductoImagen.objects.create(producto=self.prod, imagen="x_3.png", orden=2)
+        ProductoImagen.objects.create(producto=self.prod, imagen="x_2.png", orden=1)
+        paths = list(self.prod.imagenes.values_list("imagen", flat=True))
+        self.assertEqual(paths, ["x_2.png", "x_3.png"])
+
+    def test_cascade_delete_con_producto(self):
+        ProductoImagen.objects.create(producto=self.prod, imagen="x_2.png", orden=1)
+        self.prod.delete()
+        self.assertEqual(ProductoImagen.objects.count(), 0)
+
+    def test_imagen_vto_campo_en_modelo(self):
+        self.prod.refresh_from_db()
+        self.assertEqual(self.prod.imagen_vto, "productos/rayban_clubmaster_vto.png")
+
+    def test_serializer_expone_imagen_vto_url(self):
+        from django.test import RequestFactory
+        from .serializers import ProductoSerializer
+        request = RequestFactory().get("/")
+        request.user = make_user("x@x.com", "cliente")
+        data = ProductoSerializer(self.prod, context={"request": request}).data
+        self.assertIn("imagen_vto_url", data)
+        # imagen_vto está seteada → la URL no debe ser None
+        self.assertIsNotNone(data["imagen_vto_url"])
+        self.assertIn("rayban_clubmaster_vto", data["imagen_vto_url"])

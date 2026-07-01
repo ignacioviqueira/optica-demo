@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load inventario_extras %}
 {% block title %}Comprobante #{{ pedido.pk }} — Óptica Demo{% endblock %}
 
 {% block content %}
@@ -30,7 +31,7 @@
         <div class="row mb-3">
           <div class="col-sm-4 text-muted small">Total abonado</div>
           <div class="col-sm-8 fw-bold text-success">
-            ${{ pedido.total|floatformat:"0" }}
+            ${{ pedido.total|precio_ar }}
           </div>
         </div>
 
@@ -50,14 +51,14 @@
             <tr>
               <td>{{ d.producto.nombre }}</td>
               <td class="text-center">{{ d.cantidad }}</td>
-              <td class="text-end">${{ d.subtotal|floatformat:"0" }}</td>
+              <td class="text-end">${{ d.subtotal|precio_ar }}</td>
             </tr>
             {% endfor %}
           </tbody>
           <tfoot class="fw-bold">
             <tr>
               <td colspan="2" class="text-end">Total:</td>
-              <td class="text-end">${{ pedido.total|floatformat:"0" }}</td>
+              <td class="text-end">${{ pedido.total|precio_ar }}</td>
             </tr>
           </tfoot>
         </table>

@@ -15,5 +15,12 @@ def index(request):
 
 @login_requerido
 def detalle(request, pk):
-    producto = get_object_or_404(Producto, pk=pk, activo=True)
-    return render(request, "catalogo/detalle.html", {"producto": producto})
+    producto = get_object_or_404(
+        Producto.objects.select_related("categoria").prefetch_related("imagenes"),
+        pk=pk,
+        activo=True,
+    )
+    return render(request, "catalogo/detalle.html", {
+        "producto": producto,
+        "es_armazon": producto.categoria.nombre == "Armazones",
+    })

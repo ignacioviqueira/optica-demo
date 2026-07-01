@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from apps.inventario.models import Categoria, Producto
+from apps.inventario.models import Categoria, Producto, ProductoImagen
 from apps.pedidos.models import DetallePedido, Pedido, Receta
 
 User = get_user_model()
@@ -52,158 +52,116 @@ USUARIOS = [
 PRODUCTOS = {
     "Armazones": [
         {
-            "nombre": "Wayfarer Clásico",
+            "slug": "rayban_clubmaster",
+            "nombre": "Clubmaster Optics",
             "marca": "Ray-Ban",
-            "descripcion": "El ícono atemporal. Acetato negro, lente G-15.",
-            "precio": Decimal("45000.00"),
-            "stock_actual": 15,
-            "stock_minimo": 3,
-            "material": "Acetato",
-            "forma": "Cuadrado",
-        },
-        {
-            "nombre": "Holbrook",
-            "marca": "Oakley",
-            "descripcion": "Estilo deportivo con montura de acetato premium.",
-            "precio": Decimal("38000.00"),
+            "descripcion": "El clásico browline que convirtió a Ray-Ban en la marca icónica que es. Con sus patillas finas y su audaz montura semi-rimless, sigue dejando su huella día a día.",
+            "precio": Decimal("142000.00"),
             "stock_actual": 8,
             "stock_minimo": 3,
-            "material": "Acetato",
-            "forma": "Cuadrado",
+            "material": "Acetato y metal",
+            "forma": "Browline",
+            "color": "Negro",
+            "medidas": "4,9 – 2,1 – 14,0 cm",
+            "caracteristicas": ["Diseño browline", "Montura semi-rimless", "Plaquetas ajustables"],
+            "imagen": "productos/rayban_clubmaster_1.png",
+            "imagen_vto": "productos/rayban_clubmaster_vto.png",
         },
         {
-            "nombre": "PR 01OS",
-            "marca": "Prada",
-            "descripcion": "Diseño geométrico de alta gama en acetato negro.",
-            "precio": Decimal("120000.00"),
-            "stock_actual": 2,
-            "stock_minimo": 3,
-            "material": "Acetato",
-            "forma": "Cuadrado",
-        },
-        {
-            "nombre": "FT5634-B",
-            "marca": "Tom Ford",
-            "descripcion": "Elegancia italiana, montura cuadrada en acetato.",
-            "precio": Decimal("95000.00"),
-            "stock_actual": 1,
-            "stock_minimo": 3,
-            "material": "Metal",
-            "forma": "Rectangular",
-        },
-        {
-            "nombre": "205/V/4-F 55",
-            "marca": "Carrera",
-            "descripcion": "Montura deportiva urbana con puente doble.",
-            "precio": Decimal("32000.00"),
-            "stock_actual": 12,
+            "slug": "rayban_aviator",
+            "nombre": "Aviator Optics",
+            "marca": "Ray-Ban",
+            "descripcion": "El armazón en forma de gota del Ray-Ban Aviator es un giro distintivo sobre el clásico estilo aviador. Con su doble puente y su montura fina pero resistente, va igual de bien para pasear en moto que para volar a gran altura.",
+            "precio": Decimal("135000.00"),
+            "stock_actual": 6,
             "stock_minimo": 3,
             "material": "Metal",
             "forma": "Aviador",
-        },
-    ],
-    "Cristales": [
-        {
-            "nombre": "Varilux X Series",
-            "marca": "Essilor",
-            "descripcion": "Progresivo de última generación, sin saltos de imagen.",
-            "precio": Decimal("65000.00"),
-            "stock_actual": 20,
-            "stock_minimo": 5,
-            "material": "Orgánico",
-            "forma": "Progresivo",
+            "color": "Dorado",
+            "medidas": "5,8 – 1,4 – 13,5 cm",
+            "caracteristicas": ["Doble puente", "Plaquetas ajustables", "Lentes en gota"],
+            "imagen": "productos/rayban_aviator_1.png",
+            "imagen_vto": "productos/rayban_aviator_vto.png",
         },
         {
-            "nombre": "Individual 2",
-            "marca": "Zeiss",
-            "descripcion": "Personalizado según geometría facial del paciente.",
-            "precio": Decimal("85000.00"),
-            "stock_actual": 10,
-            "stock_minimo": 5,
-            "material": "Orgánico",
-            "forma": "Progresivo",
+            "slug": "rayban_wayfarer",
+            "nombre": "Wayfarer Ease",
+            "marca": "Ray-Ban",
+            "descripcion": "Un clásico Wayfarer que nunca pasa de moda. Hecho en acetato flexible, luce elegantes remaches plateados y patillas finas de tonalidad rica y multicapa.",
+            "precio": Decimal("121000.00"),
+            "stock_actual": 12,
+            "stock_minimo": 4,
+            "material": "Acetato",
+            "forma": "Cuadrado",
+            "color": "Negro brillante",
+            "medidas": "5,0 – 2,2 – 15,0 cm",
+            "caracteristicas": ["Acetato flexible", "Remaches plateados", "Plaquetas integradas"],
+            "imagen": "productos/rayban_wayfarer_1.png",
+            "imagen_vto": "productos/rayban_wayfarer_vto.png",
         },
         {
-            "nombre": "ID MyStyle V+",
-            "marca": "Hoya",
-            "descripcion": "Progresivo adaptativo para uso digital intensivo.",
-            "precio": Decimal("72000.00"),
-            "stock_actual": 4,
-            "stock_minimo": 5,
-            "material": "Orgánico",
-            "forma": "Progresivo",
+            "slug": "rayban_round",
+            "nombre": "Round Metal Optics",
+            "marca": "Ray-Ban",
+            "descripcion": "Un armazón perfectamente redondo con el diseño icónico de Ray-Ban. Construido en metal liviano, luce patillas estilizadas y un estilo audaz que no pasa desapercibido.",
+            "precio": Decimal("128000.00"),
+            "stock_actual": 5,
+            "stock_minimo": 3,
+            "material": "Metal",
+            "forma": "Redondo",
+            "color": "Dorado",
+            "medidas": "5,0 – 2,1 – 14,5 cm",
+            "caracteristicas": ["Forma redonda", "Plaquetas ajustables", "Patillas estilizadas"],
+            "imagen": "productos/rayban_round_1.png",
+            "imagen_vto": "productos/rayban_round_vto.png",
         },
         {
-            "nombre": "SeeMax Ultimate",
-            "marca": "Nikon",
-            "descripcion": "Freeform con optimización binocular.",
-            "precio": Decimal("78000.00"),
-            "stock_actual": 7,
-            "stock_minimo": 5,
-            "material": "Policarbonato",
-            "forma": "Unifocal",
+            "slug": "oakley_holbrook",
+            "nombre": "Holbrook RX",
+            "marca": "Oakley",
+            "descripcion": "La versión óptica de uno de los estilos insignia de Oakley. Apariencia cuadrada y audaz, con puente tipo llave, patillas estilizadas y plaquetas moldeadas.",
+            "precio": Decimal("112000.00"),
+            "stock_actual": 9,
+            "stock_minimo": 4,
+            "material": "O-Matter",
+            "forma": "Cuadrado",
+            "color": "Negro",
+            "medidas": "5,6 – 1,8 – 13,7 cm",
+            "caracteristicas": ["Puente tipo llave", "Plaquetas integradas", "Bisagras con resorte"],
+            "imagen": "productos/oakley_holbrook_1.png",
+            "imagen_vto": "productos/oakley_holbrook_vto.png",
         },
         {
-            "nombre": "Autograph III",
-            "marca": "Shamir",
-            "descripcion": "Progresivo free-form de campo amplio.",
-            "precio": Decimal("68000.00"),
-            "stock_actual": 6,
-            "stock_minimo": 5,
-            "material": "Orgánico",
-            "forma": "Progresivo",
-        },
-    ],
-    "Lentes de Contacto": [
-        {
-            "nombre": "Oasys 1-Day (30 u.)",
-            "marca": "Acuvue",
-            "descripcion": "Desechables diarias con tecnología HydraLuxe.",
-            "precio": Decimal("18500.00"),
-            "stock_actual": 50,
-            "stock_minimo": 10,
-            "material": "Hidrogel de Silicona",
-            "forma": "Esférico",
-        },
-        {
-            "nombre": "Ultra (6 u.)",
-            "marca": "Bausch+Lomb",
-            "descripcion": "Mensuales con MoistureSeal para ojo seco.",
-            "precio": Decimal("22000.00"),
+            "slug": "oakley_crosslink",
+            "nombre": "Crosslink",
+            "marca": "Oakley",
+            "descripcion": "Un armazón auténticamente cool, fabricado a mano en O-Matter liviano y resistente. Patillas robustas y ajustables para un calce óptimo, con terminaciones Unobtainium antideslizantes.",
+            "precio": Decimal("118000.00"),
             "stock_actual": 3,
-            "stock_minimo": 10,
-            "material": "Hidrogel de Silicona",
-            "forma": "Esférico",
+            "stock_minimo": 4,
+            "material": "O-Matter",
+            "forma": "Rectangular",
+            "color": "Negro",
+            "medidas": "5,6 – 1,6 – 13,8 cm",
+            "caracteristicas": ["O-Matter resistente", "Patillas ajustables", "Unobtainium antideslizante"],
+            "imagen": "productos/oakley_crosslink_1.png",
+            "imagen_vto": "productos/oakley_crosslink_vto.png",
         },
         {
-            "nombre": "Biofinity (6 u.)",
-            "marca": "CooperVision",
-            "descripcion": "Mensuales con material Aquaform.",
-            "precio": Decimal("19500.00"),
-            "stock_actual": 25,
-            "stock_minimo": 10,
-            "material": "Hidrogel",
-            "forma": "Esférico",
-        },
-        {
-            "nombre": "Dailies Total1 (30 u.)",
-            "marca": "Alcon",
-            "descripcion": "Diarias water-gradient para máxima comodidad.",
-            "precio": Decimal("21000.00"),
-            "stock_actual": 15,
-            "stock_minimo": 10,
-            "material": "Hidrogel de Silicona",
-            "forma": "Esférico",
-        },
-        {
-            "nombre": "Proclear Compatibles (6 u.)",
-            "marca": "CooperVision",
-            "descripcion": "Mensuales PC Technology, aptas para ojo seco.",
-            "precio": Decimal("15000.00"),
-            "stock_actual": 2,
-            "stock_minimo": 10,
-            "material": "Hidrogel",
-            "forma": "Tórico",
+            "slug": "oakley_airdrop",
+            "nombre": "Airdrop",
+            "marca": "Oakley",
+            "descripcion": "Un armazón de estética futurista, fabricado a mano en O-Matter ultraresistente y liviano, con patillas robustas y un diseño angular.",
+            "precio": Decimal("108000.00"),
+            "stock_actual": 7,
+            "stock_minimo": 4,
+            "material": "O-Matter",
+            "forma": "Rectangular",
+            "color": "Negro",
+            "medidas": "5,7 – 1,8 – 14,3 cm",
+            "caracteristicas": ["O-Matter ultraresistente", "Plaquetas integradas", "Diseño angular"],
+            "imagen": "productos/oakley_airdrop_1.png",
+            "imagen_vto": "productos/oakley_airdrop_vto.png",
         },
     ],
 }
@@ -282,6 +240,17 @@ class Command(BaseCommand):
         productos = {}
         cat_created = prod_created = 0
 
+        # Desactivar productos de categorías que ya no están en el seed
+        Producto.objects.exclude(
+            categoria__nombre__in=list(PRODUCTOS.keys())
+        ).filter(activo=True).update(activo=False)
+
+        # Desactivar productos dentro de categorías activas que ya no están en el seed
+        nombres_actuales = [item["nombre"] for items in PRODUCTOS.values() for item in items]
+        Producto.objects.filter(
+            categoria__nombre__in=list(PRODUCTOS.keys())
+        ).exclude(nombre__in=nombres_actuales).update(activo=False)
+
         for nombre_cat, items in PRODUCTOS.items():
             cat, created = Categoria.objects.get_or_create(
                 nombre=nombre_cat,
@@ -303,21 +272,40 @@ class Command(BaseCommand):
                         "categoria": cat,
                         "material": item.get("material", ""),
                         "forma": item.get("forma", ""),
+                        "imagen": item.get("imagen", ""),
+                        "imagen_vto": item.get("imagen_vto", ""),
+                        "activo": True,
                     },
                 )
                 if created:
                     prod_created += 1
                 else:
-                    # Patch material/forma on existing products if empty
-                    needs_save = False
-                    if not prod.material and item.get("material"):
-                        prod.material = item["material"]
-                        needs_save = True
-                    if not prod.forma and item.get("forma"):
-                        prod.forma = item["forma"]
-                        needs_save = True
-                    if needs_save:
-                        prod.save(update_fields=["material", "forma"])
+                    # Re-aplicar todos los campos del seed (idempotente)
+                    campos = (
+                        "descripcion", "material", "forma", "imagen", "imagen_vto",
+                        "color", "medidas", "caracteristicas",
+                    )
+                    for campo in campos:
+                        default = [] if campo == "caracteristicas" else ""
+                        setattr(prod, campo, item.get(campo, default))
+                    prod.activo = True
+                    prod.save(update_fields=[*campos, "activo"])
+
+                # Galería extra: {slug}_2.png y {slug}_3.png para armazones
+                slug = item.get("slug")
+                if slug and nombre_cat == "Armazones":
+                    prod.imagenes.all().delete()
+                    ProductoImagen.objects.create(
+                        producto=prod,
+                        imagen=f"productos/{slug}_2.png",
+                        orden=1,
+                    )
+                    ProductoImagen.objects.create(
+                        producto=prod,
+                        imagen=f"productos/{slug}_3.png",
+                        orden=2,
+                    )
+
                 productos[f"{item['marca']}_{item['nombre']}"] = prod
 
         self.stdout.write(
@@ -358,12 +346,12 @@ class Command(BaseCommand):
             return
 
         today = timezone.now()
-        wayfarer = productos.get("Ray-Ban_Wayfarer Clásico")
-        varilux = productos.get("Essilor_Varilux X Series")
-        oasys = productos.get("Acuvue_Oasys 1-Day (30 u.)")
-        ultra = productos.get("Bausch+Lomb_Ultra (6 u.)")
-        holbrook = productos.get("Oakley_Holbrook")
-        zeiss = productos.get("Zeiss_Individual 2")
+        wayfarer  = productos.get("Ray-Ban_Wayfarer Ease")
+        aviator   = productos.get("Ray-Ban_Aviator Optics")
+        holbrook  = productos.get("Oakley_Holbrook RX")
+        round_m   = productos.get("Ray-Ban_Round Metal Optics")
+        clubmaster = productos.get("Ray-Ban_Clubmaster Optics")
+        crosslink  = productos.get("Oakley_Crosslink")
 
         specs = [
             # (estado, fecha_offset_dias, receta_idx, [(producto, cantidad)], motivo)
@@ -371,28 +359,28 @@ class Command(BaseCommand):
                 Pedido.Estado.PENDIENTE_VALIDACION,
                 2,
                 0,
-                [(wayfarer, 1), (varilux, 1)],
+                [(wayfarer, 1), (aviator, 1)],
                 "",
             ),
             (
                 Pedido.Estado.EN_PROCESO,
                 5,
                 1,
-                [(holbrook, 1), (zeiss, 1)],
+                [(holbrook, 1), (round_m, 1)],
                 "",
             ),
             (
                 Pedido.Estado.LISTO,
                 10,
                 0,
-                [(oasys, 2)],
+                [(clubmaster, 1)],
                 "",
             ),
             (
                 Pedido.Estado.LISTO,
                 20,
                 None,
-                [(ultra, 1)],
+                [(crosslink, 1)],
                 "",
             ),
             (

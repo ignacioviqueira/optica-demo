@@ -1,1 +1,334 @@
-/* Estilos globales del demo */
+/* ═══════════════════════════════════════════════════════════════
+   Óptica Demo — Design System
+   Stack: Bootstrap 5.3 + Inter (Google Fonts)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. Tokens de diseño ────────────────────────────────────────── */
+:root {
+  /* Paleta de marca */
+  --brand:          #1e3a5f;       /* navy oscuro → navbar  */
+  --brand-mid:      #2563eb;       /* azul brillante → primary accents */
+
+  /* Sobreescritura de Bootstrap CSS vars */
+  --bs-primary:           #2563eb;
+  --bs-primary-rgb:       37, 99, 235;
+  --bs-body-font-family:  'Inter', system-ui, -apple-system, sans-serif;
+  --bs-body-bg:           #f1f5f9;
+  --bs-body-color:        #0f172a;
+  --bs-secondary-color:   #64748b;
+  --bs-border-color:      #e2e8f0;
+  --bs-border-radius:     .5rem;
+  --bs-border-radius-lg:  .75rem;
+  --bs-border-radius-sm:  .375rem;
+
+  /* Sombras */
+  --shadow-xs:  0 1px 2px rgba(15,23,42,.06);
+  --shadow-sm:  0 1px 3px rgba(15,23,42,.07), 0 4px 12px rgba(15,23,42,.05);
+  --shadow-md:  0 4px 6px rgba(15,23,42,.07), 0 10px 24px rgba(15,23,42,.07);
+
+  /* Radios de card */
+  --card-radius: .75rem;
+}
+
+/* ── 2. Tipografía y body ────────────────────────────────────────── */
+body {
+  font-family: var(--bs-body-font-family);
+  background: var(--bs-body-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6, .fw-bold {
+  letter-spacing: -.02em;
+}
+
+/* Números tabulares en todos los contextos de datos */
+.table td.text-end,
+.table td.text-center.fw-bold,
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 3. Navbar ───────────────────────────────────────────────────── */
+.navbar-optica {
+  background: var(--brand) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.06), 0 2px 8px rgba(0,0,0,.18);
+  padding-top: .625rem;
+  padding-bottom: .625rem;
+}
+
+.navbar-optica .navbar-brand {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -.025em;
+  color: #fff !important;
+  gap: .5rem;
+}
+
+.navbar-optica .navbar-brand svg {
+  opacity: .92;
+  flex-shrink: 0;
+}
+
+.navbar-optica .nav-link {
+  color: rgba(255,255,255,.72) !important;
+  font-size: .875rem;
+  font-weight: 500;
+  padding: .35rem .75rem !important;
+  border-radius: .4rem;
+  transition: color .12s, background .12s;
+}
+.navbar-optica .nav-link:hover,
+.navbar-optica .nav-link.active {
+  color: #fff !important;
+  background: rgba(255,255,255,.1);
+}
+
+.navbar-optica .btn-outline-light {
+  border-color: rgba(255,255,255,.35);
+  color: rgba(255,255,255,.9);
+  font-size: .8125rem;
+}
+.navbar-optica .btn-outline-light:hover {
+  background: rgba(255,255,255,.12);
+  border-color: rgba(255,255,255,.55);
+  color: #fff;
+}
+
+/* Badge de rol — color según rol, colocado en la navbar */
+.badge-rol {
+  font-size: .62rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  padding: .28em .65em;
+  border-radius: .375rem;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.badge-rol-gerencia { background: rgba(37,99,235,.85); }
+.badge-rol-ventas   { background: rgba(22,163,74,.85); }
+.badge-rol-cliente  { background: rgba(100,116,139,.75); }
+
+/* Nombre del usuario */
+.navbar-user-name {
+  color: rgba(255,255,255,.65);
+  font-size: .8125rem;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 4. Contenedor principal ─────────────────────────────────────── */
+main.container {
+  padding-top: 1.75rem;
+  padding-bottom: 3rem;
+}
+
+/* ── 5. Cards ───────────────────────────────────────────────────── */
+.card {
+  border-radius: var(--card-radius) !important;
+}
+
+/* Shadow uniforme para todos los shadow-sm */
+.shadow-sm,
+.card.shadow-sm {
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.card-header {
+  background: #fff !important;
+  border-bottom: 1px solid #e2e8f0;
+  padding: .875rem 1.25rem;
+  font-size: .875rem;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  border-radius: var(--card-radius) var(--card-radius) 0 0 !important;
+}
+
+.card-footer {
+  border-top: 1px solid #e2e8f0;
+  background: #fafafa !important;
+  border-radius: 0 0 var(--card-radius) var(--card-radius) !important;
+}
+
+/* ── 6. KPI Cards ───────────────────────────────────────────────── */
+.kpi-card {
+  border-top: 3px solid transparent !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+}
+
+.kpi-primary { border-top-color: #2563eb !important; }
+.kpi-success { border-top-color: #16a34a !important; }
+.kpi-info    { border-top-color: #0ea5e9 !important; }
+.kpi-warning { border-top-color: #d97706 !important; }
+
+.kpi-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  border-radius: .5rem;
+  flex-shrink: 0;
+}
+
+.kpi-label {
+  font-size: .67rem;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: #64748b;
+  line-height: 1;
+}
+
+.kpi-value {
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-sub {
+  font-size: .75rem;
+  color: #94a3b8;
+  margin-top: .2rem;
+}
+
+/* ── 7. Tablas ──────────────────────────────────────────────────── */
+.table {
+  font-size: .875rem;
+  --bs-table-striped-bg: rgba(241,245,249,.7);
+  --bs-table-hover-bg:   rgba(37,99,235,.04);
+}
+
+.table thead th {
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: #64748b;
+  border-bottom-width: 1px !important;
+  padding: .625rem .75rem;
+  white-space: nowrap;
+  background: inherit;
+}
+
+/* thead oscuro → texto claro en inventario */
+.table-dark thead th {
+  color: rgba(255,255,255,.75);
+}
+
+.table td {
+  padding: .625rem .75rem;
+  vertical-align: middle;
+}
+
+/* Números en tablas: siempre tabulares */
+.table td.text-end {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* ── 8. Badges de estado ────────────────────────────────────────── */
+.badge-estado {
+  font-size: .68rem;
+  font-weight: 600;
+  padding: .28em .65em;
+  letter-spacing: .02em;
+  border-radius: .375rem;
+}
+
+/* ── 9. Estados vacíos ──────────────────────────────────────────── */
+.empty-state {
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+}
+
+.empty-state .empty-icon {
+  font-size: 2.75rem;
+  line-height: 1;
+  margin-bottom: .875rem;
+  display: block;
+  opacity: .65;
+}
+
+.empty-state .empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: .375rem;
+}
+
+.empty-state .empty-sub {
+  font-size: .875rem;
+  color: #9ca3af;
+  margin-bottom: 0;
+}
+
+/* ── 10. Page header ────────────────────────────────────────────── */
+.page-header { margin-bottom: 1.5rem; }
+.page-header h2 {
+  font-size: 1.375rem;
+  margin-bottom: .2rem;
+}
+
+/* ── 11. Utilidades extras ──────────────────────────────────────── */
+.fw-medium { font-weight: 500 !important; }
+.lh-tight  { line-height: 1.2 !important; }
+.text-xs   { font-size: .75rem; }
+.text-2xs  { font-size: .68rem; }
+
+/* Opacidad para filas inactivas en inventario (Bootstrap no tiene opacity-60) */
+.opacity-60 { opacity: .6 !important; }
+
+/* ── 12. Breadcrumb ─────────────────────────────────────────────── */
+.breadcrumb {
+  font-size: .82rem;
+}
+.breadcrumb-item a {
+  color: var(--brand-mid);
+  text-decoration: none;
+  transition: color .12s;
+}
+.breadcrumb-item a:hover { color: var(--brand); }
+.breadcrumb-item.active { color: #64748b; }
+.breadcrumb-item + .breadcrumb-item::before { color: #cbd5e1; }
+
+/* ── 13. Botones — transiciones y focus ─────────────────────────── */
+.btn {
+  transition: color .12s, background-color .12s, border-color .12s,
+              box-shadow .12s, transform .1s !important;
+}
+
+/* Botones primarios: sombra sutil en hover */
+.btn-primary:not(:disabled):hover {
+  box-shadow: 0 4px 12px rgba(37,99,235,.35);
+  transform: translateY(-1px);
+}
+.btn-outline-primary:not(:disabled):hover {
+  box-shadow: 0 2px 8px rgba(37,99,235,.2);
+}
+.btn-success:not(:disabled):hover {
+  box-shadow: 0 4px 12px rgba(22,163,74,.3);
+  transform: translateY(-1px);
+}
+
+/* Focus visible — anillo azul de marca */
+:focus-visible {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(37,99,235,.12) !important;
+}
+
+/* ── 14. Responsive ─────────────────────────────────────────────── */
+@media (max-width: 576px) {
+  .kpi-value { font-size: 1.375rem; }
+  main.container { padding-top: 1rem; }
+  .page-header h2 { font-size: 1.125rem; }
+}

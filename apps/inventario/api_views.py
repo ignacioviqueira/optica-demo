@@ -45,7 +45,7 @@ class ProductoDetailAPIView(generics.RetrieveAPIView):
 
 class CategoriaListAPIView(generics.ListAPIView):
     serializer_class = CategoriaSerializer
-    queryset = Categoria.objects.all()
+    queryset = Categoria.objects.filter(productos__activo=True).distinct()
 
 
 class FiltrosMetaAPIView(APIView):
@@ -56,10 +56,16 @@ class FiltrosMetaAPIView(APIView):
     def get(self, request):
         qs = Producto.objects.filter(activo=True)
         agg = qs.aggregate(precio_min=Min("precio"), precio_max=Max("precio"))
+        # order_by() limpia el Meta.ordering del modelo; sin eso PostgreSQL
+        # incluye las columnas de ordenamiento en la SELECT DISTINCT y devuelve
+        # una fila por producto en lugar de valores únicos.
+        def distinct_field(field):
+            return qs.order_by(field).values_list(field, flat=True).distinct()
+
         return Response({
-            "marcas": sorted(qs.values_list("marca", flat=True).distinct()),
-            "materiales": sorted(v for v in qs.values_list("material", flat=True).distinct() if v),
-            "formas": sorted(v for v in qs.values_list("forma", flat=True).distinct() if v),
+            "marcas": sorted(distinct_field("marca")),
+            "materiales": sorted(v for v in distinct_field("material") if v),
+            "formas": sorted(v for v in distinct_field("forma") if v),
             "precio_min": float(agg["precio_min"] or 0),
             "precio_max": float(agg["precio_max"] or 0),
         })

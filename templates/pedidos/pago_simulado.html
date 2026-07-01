@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load inventario_extras %}
 {% block title %}Pago simulado — Óptica Demo{% endblock %}
 
 {% block content %}
@@ -31,7 +32,7 @@
         </div>
 
         <div class="alert alert-info py-2 mb-3">
-          <strong>Total a pagar: ${{ pedido.total|floatformat:"0" }}</strong>
+          <strong>Total a pagar: ${{ pedido.total|precio_ar }}</strong>
           &nbsp;(Pedido #{{ pedido.pk }})
         </div>
 

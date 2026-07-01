@@ -25,7 +25,7 @@ class ProductoForm(forms.ModelForm):
             "stock_minimo": forms.NumberInput(attrs={"class": _INPUT, "min": "0"}),
             "material": forms.TextInput(attrs={"class": _INPUT}),
             "forma": forms.TextInput(attrs={"class": _INPUT}),
-            "imagen": forms.ClearableFileInput(attrs={"class": _INPUT}),
+            "imagen": forms.TextInput(attrs={"class": _INPUT, "placeholder": "productos/nombre.png"}),
             "activo": forms.CheckboxInput(attrs={"class": _CHECK}),
         }
         labels = {

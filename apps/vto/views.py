@@ -23,14 +23,30 @@ def index(request):
     GET /vto/?producto=<id>
     Pantalla de Prueba Virtual. Si se pasa ?producto=<id> pre-carga ese armazón.
     """
+    from django.templatetags.static import static
+
     producto_id = request.GET.get('producto')
     producto = None
+    producto_frame_url = None
     if producto_id:
-        producto = get_object_or_404(Producto, pk=producto_id, activo=True)
+        producto = get_object_or_404(
+            Producto.objects.select_related('categoria'), pk=producto_id, activo=True
+        )
+        if producto.imagen_vto and producto.categoria.nombre == "Armazones":
+            producto_frame_url = static(producto.imagen_vto)
+
+    armazones = (
+        Producto.objects
+        .filter(activo=True, categoria__nombre="Armazones")
+        .select_related('categoria')
+        .order_by('marca', 'nombre')
+    )
 
     return render(request, 'vto/index.html', {
         'producto': producto,
-        'frames_disponibles': FRAMES_VTO,
+        'producto_frame_url': producto_frame_url,
+        'armazones': armazones,
+        'frames_disponibles': FRAMES_VTO,   # mantenido para compatibilidad con tests
     })
 
 

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{% if producto %}Editar producto{% else %}Nuevo producto{% endif %} — Óptica Demo{% endblock %}
 
@@ -30,7 +31,7 @@
 
     <div class="card border-0 shadow-sm">
       <div class="card-body p-4">
-        <form method="post" enctype="multipart/form-data">
+        <form method="post">
           {% csrf_token %}
 
           <div class="row g-3">
@@ -88,9 +89,9 @@
               <label class="form-label fw-semibold">Imagen del producto</label>
               {% if producto.imagen %}
                 <div class="mb-2">
-                  <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}"
+                  <img src="{% static producto.imagen %}" alt="{{ producto.nombre }}"
                        class="rounded border" style="max-height:120px;">
-                  <div class="form-text">Subí una nueva imagen para reemplazar la actual.</div>
+                  <div class="form-text">Ruta actual. Editá el campo para cambiarla.</div>
                 </div>
               {% endif %}
               {{ form.imagen }}
